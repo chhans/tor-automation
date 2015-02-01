@@ -1,16 +1,27 @@
 from selenium import webdriver
+import subprocess
+import time
 
-#TODO: Make sure scripts and add-ons are disabled and Tor is enabled
+# Change interface to the currently connected
+iface = "en0"
+N = int(input("Enter number of sites to visit: "))
 
-num_sites = int(input("Enter number of sites to visit: "))
+# Makes request to the given address
+def getPage(addr):
+	print("Requesting %d: %s" % (i+1, addr))
+	driver = webdriver.Firefox()
+	driver.get("http://"+addr)
+	driver.quit()
 
-with open("alexa.csv") as siteFile:
-	site_list = [next(siteFile) for x in xrange(num_sites)]
+def capture():
+	return subprocess.Popen("tshark -i %s -w ./captures/%d.cap" % (iface, i), shell=True)
 
-for (i, address) in enumerate(site_list):
-	trimmed_address = address.split(',' , 1)[1][:-1]
-	print("Requesting %d: %s" % (i+1, trimmed_address))
-	browser = webdriver.Firefox()
-	browser.get("http://"+trimmed_address)
+# Opens the list of web sites to visit and parses the first N entries
+with open("alexa.csv") as f:
+	sites = [next(f) for x in xrange(N)]
 
-#browser.get('http://vg.no/')
+for (i, addr) in enumerate(sites):
+	trim_addr = addr.split(',', 1)[1][:-1]
+	captureProcess = capture()
+	getPage(trim_addr)
+	captureProcess.terminate()
