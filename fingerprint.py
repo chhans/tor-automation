@@ -1,27 +1,34 @@
 from selenium import webdriver
 from torProfile import TorProfile
-import config
+import config as c
 import subprocess
 import time
-
-N = int(input("Enter number of sites to visit: "))
+from random import randint
 
 # Makes request to the given address
 def getPage(addr):
 	print("Requesting %d: %s" % (i+1, addr))
 	driver = webdriver.Firefox(TorProfile().p)
-	driver.get("http://"+addr)
+	driver.get(addr)
 	driver.quit()
 
 def capture():
-	return subprocess.Popen("tshark -i %s -w ./captures/%d.cap" % (config.iface, i), shell=True)
+	return subprocess.Popen("tshark -i %s -w ./captures/%d.cap" % (c.iface, i), shell=True)
 
-# Opens the list of web sites to visit and parses the first N entries
+# Opens the list of web sites included in the experiments
 with open("alexa.csv") as f:
-	sites = [next(f) for x in xrange(N)]
+	sites = [next(f) for x in xrange(max(c.N, c.M))]
 
-for (i, addr) in enumerate(sites):
-	trim_addr = addr.split(',', 1)[1][:-1]
+# Pick out the indices of the sites to visit
+siteIndices = [0]*c.N
+if c.R:
+	for i in range(0,c.N):
+		siteIndices[i] = randint(0,c.M)
+else:
+	siteIndices = range(0,c.N)
+
+for i in siteIndices:
+	address = "http://"+sites[i].split(',', 1)[1][:-1]
 	captureProcess = capture()
-	getPage(trim_addr)
+	getPage(address)
 	captureProcess.terminate()
