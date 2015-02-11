@@ -1,8 +1,14 @@
+# To run, install Selenium for Python and tshark
+# pip install selenium
+# Make sure tor is running
+
 from selenium import webdriver
 from torProfile import TorProfile
 import config as c
 import subprocess
 import time
+import os
+import signal
 from random import randint
 
 # Makes request to the given address
@@ -13,7 +19,7 @@ def getPage(addr):
 	driver.quit()
 
 def capture():
-	return subprocess.Popen("tshark -i %s -w ./captures/%d.cap" % (c.iface, i), shell=True)
+	return subprocess.Popen("tshark -i %s -w ./%s/%d.cap" % (c.iface, c.out, i), stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
 
 # Opens the list of web sites included in the experiments
 with open("alexa.csv") as f:
@@ -31,4 +37,5 @@ for i in siteIndices:
 	address = "http://"+sites[i].split(',', 1)[1][:-1]
 	captureProcess = capture()
 	getPage(address)
-	captureProcess.terminate()
+	#captureProcess.terminate()
+	os.killpg(captureProcess.pid, signal.SIGTERM)
