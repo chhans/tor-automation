@@ -1,41 +1,130 @@
-# To run, install Selenium for Python and tshark
-# pip install selenium
-# Make sure tor is running
-
 from selenium import webdriver
 from torProfile import TorProfile
-import config as c
+from analysis import Analysis
+from random import randint
 import subprocess
-import time
 import os
 import signal
-from random import randint
+import pyshark
+import re
 
-# Makes request to the given address
-def getPage(addr):
-	print("Requesting %d: %s" % (i+1, addr))
-	driver = webdriver.Firefox(TorProfile().p)
-	driver.get(addr)
-	driver.quit()
+class Fingerprint:
 
-def capture():
-	return subprocess.Popen("tshark -i %s -w ./%s/%d.cap" % (c.iface, c.out, i), stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+	def __init__(self, site_indices, random, passes, max_index, src_ip):
+		self.site_indices = site_indices
+		self.random = random
+		self.passes = passes
+		self.src_ip = src_ip
 
-# Opens the list of web sites included in the experiments
-with open("alexa.csv") as f:
-	sites = [next(f) for x in xrange(max(c.N, c.M))]
+		with open("alexa.csv", "r") as f:
+			self.sites = [next(f) for x in xrange(max_index)]
 
-# Pick out the indices of the sites to visit
-siteIndices = [0]*c.N
-if c.R:
-	for i in range(0,c.N):
-		siteIndices[i] = randint(0,c.M)
-else:
-	siteIndices = range(0,c.N)
+	def makeFingerprints(self, out_path, iface):
+		# makes requests and captures traffic, then produce the traffic metrics for that request
+		for i, s in enumerate(self.site_indices):
+			totalMetrics = None
+			for j in range(0, self.passes):
+				file_name = "%d-%d.cap" % (i, j)
+				file_path = "%scaptures/%s" % (out_path, file_name)
+				captureProcess = self.capture(iface, file_path)
+				self.getPage(self.getAddress(s))
+				os.killpg(captureProcess.pid, signal.SIGTERM)
 
-for i in siteIndices:
-	address = "http://"+sites[i].split(',', 1)[1][:-1]
-	captureProcess = capture()
-	getPage(address)
-	#captureProcess.terminate()
-	os.killpg(captureProcess.pid, signal.SIGTERM)
+				metrics = self.analyze(file_path)
+				print "Metrics for %s: %s" % (file_path, metrics)
+				if totalMetrics == None:
+					totalMetrics = metrics
+				else:
+					totalMetrics = self.add(totalMetrics, metrics)
+			totalMetrics = self.avg(totalMetrics)
+
+			print "Trace for site %d: %s" % (i, totalMetrics)
+			trace_str = "%s\n" % ", ".join( str(x) for x in totalMetrics )
+			self.appendToFile("./fingerprints/traces", trace_str)
+			#with open("./fingerprints/traces", "a+") as f:
+			#	f.write(", ".join( str(x) for x in totalMetrics ))
+			#	f.write("\n")
+
+	def getAddress(self, i):
+		return "http://"+self.sites[i].split(',', 1)[1][:-1]
+
+	def getPage(self, addr):
+		print "Requesting site %s" % addr
+		driver = webdriver.Firefox(firefox_profile=TorProfile().p)
+		driver.set_page_load_timeout(2)
+		try:
+			driver.get(addr)
+		except:
+			self.log("Timeout: %s" % addr)
+		driver.quit()
+
+	def capture(self, iface, file_path):
+		command = "tshark -f tcp -i %s -w %s" % (iface, file_path)
+		return subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+
+	def analyze(self, in_path):
+		# metrics: [packets on uplink, packets on downlink]
+		metrics = [0, 0]
+		cap = pyshark.FileCapture(in_path)
+		for p in cap:
+			n = self.analyzePacket(p)
+			i = self.metricIndex(p)
+			if i != -1:
+				metrics[i] += n
+		return metrics
+	
+	def analyzePacket(self, p):
+		try:
+			if p.highest_layer == "DATA":
+				return len(re.findall("17030[0123]0230", p.data.data))
+			elif p.highest_layer == "SSL":
+				if p.ssl.record_length == "560":
+					return 1
+			return 0
+		except:
+			return 0
+
+	def metricIndex(self, p):
+		try:
+			if p.ip.src == self.src_ip:
+				# Packet on uplink
+				return 0
+			else:
+				# Packet on downlink
+				return 1
+		except:
+			# Ignores IPv6
+			return -1
+
+	def appendToFile(self, file_path, data):
+		with open(file_path, "a+") as f:
+			f.write(data)
+
+	def log(self, data):
+		self.appendToFile("./log.dat", "%s\n" % data)
+
+	def add(self, list1, list2):
+		return [list1[i] + list2[i] for i in range(0,len(list1))]
+
+	def avg(self, list):
+		return [x / self.passes for x in list]
+
+
+if __name__ == "__main__":
+	passes = 2
+	site_number = 1000
+	max_index = 1000
+	random = False
+	out_path = "./fingerprints/"
+	iface = "eth1"
+	src_ip = "129.241.208.200"
+
+	site_indices = [0]*site_number
+	if random:
+		for i in range(0, site_number):
+			site_indices[i] = randint(0, max_index)
+	else:
+		site_indices = range(0, site_number)
+
+	f = Fingerprint(site_indices, random, passes, max_index, src_ip)
+	f.makeFingerprints(out_path, iface)
