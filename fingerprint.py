@@ -7,6 +7,7 @@ import os
 import signal
 import pyshark
 import re
+import datetime
 
 class Fingerprint:
 
@@ -40,7 +41,7 @@ class Fingerprint:
 
 			print "Trace for site %d: %s" % (i, totalMetrics)
 			trace_str = "%s\n" % ", ".join( str(x) for x in totalMetrics )
-			self.appendToFile("./fingerprints/traces", trace_str)
+			self.appendToFile("%straces" % out_path, trace_str)
 			#with open("./fingerprints/traces", "a+") as f:
 			#	f.write(", ".join( str(x) for x in totalMetrics ))
 			#	f.write("\n")
@@ -51,11 +52,11 @@ class Fingerprint:
 	def getPage(self, addr):
 		print "Requesting site %s" % addr
 		driver = webdriver.Firefox(firefox_profile=TorProfile().p)
-		driver.set_page_load_timeout(2)
+		driver.set_page_load_timeout(300)
 		try:
 			driver.get(addr)
 		except:
-			self.log("Timeout: %s" % addr)
+			self.log("Error: %s" % addr)
 		driver.quit()
 
 	def capture(self, iface, file_path):
@@ -101,7 +102,7 @@ class Fingerprint:
 			f.write(data)
 
 	def log(self, data):
-		self.appendToFile("./log.dat", "%s\n" % data)
+		self.appendToFile("./log.dat", "%s:\t%s\n" % (datetime.datetime.now(), data))
 
 	def add(self, list1, list2):
 		return [list1[i] + list2[i] for i in range(0,len(list1))]
@@ -111,18 +112,18 @@ class Fingerprint:
 
 
 if __name__ == "__main__":
-	passes = 2
-	site_number = 1000
-	max_index = 1000
-	random = False
-	out_path = "./fingerprints/"
+	passes = 1
+	site_number = 10
+	max_index = 10
+	random = True
+	out_path = "./test/"
 	iface = "eth1"
 	src_ip = "129.241.208.200"
 
 	site_indices = [0]*site_number
 	if random:
 		for i in range(0, site_number):
-			site_indices[i] = randint(0, max_index)
+			site_indices[i] = randint(0, max_index-1)
 	else:
 		site_indices = range(0, site_number)
 
