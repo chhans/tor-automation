@@ -1,4 +1,5 @@
-import pyshark
+import pcapy
+import socket
 import re
 
 class Fingerprint:
@@ -31,26 +32,33 @@ class Fingerprint:
 	def analyze(self, in_path):
 		# metrics: [packets on uplink, packets on downlink]
 		metrics = [0, 0]
-		cap = pyshark.FileCapture(in_path, display_filter="frame contains 17:03:03 or frame contains 17:03:02 or frame contains 17:03:01 or frame contains 17:03:00")
-		for p in cap:
-			n = self.analyzePacket(p)
-			i = self.metricIndex(p)
-			if i != -1:
-				metrics[i] += n
+
+		try:
+			cap = pcapy.open_offline(in_path)
+			(header, payload) = cap.next()
+			while header:
+				n = len(re.findall("\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]", payload))
+				i = self.metricIndex(payload)
+				if i != -1:
+					metrics[i] +=n
+				(header, payload) = cap.next()
+		except pcapy.PcapError:
+			pass
 		return metrics
 	
-	def analyzePacket(self, p):
+	def metricIndex(self, payload):
 		try:
-			if p.highest_layer == "DATA":
-				n = len(re.findall("17030[0123]0230", p.data.data))
-				if n == 0:
-					n = len(re.findall("17030[0123]021a", p.data.data))
-				return n
-			elif p.highest_layer == "SSL":
-				if p.ssl.record_length == "560" or p.ssl.record_length == "543":
-					return 1
-			return 0
+			# Carve out src IP. Remove 14B ethernet header, 12B IP header start and 4B destination IP.
+			ip_header = payload[26:30]
+			src_ip = socket.inet_ntoa(ip_header)
+			if src_ip == self.src_ip:
+				# Packet on uplink
+				return 0
+			else:
+				# Packet on downlink
+				return 1
 		except:
+			# Ignore IPv6
 			return 0
 
 	def add(self, list1, list2):
@@ -62,18 +70,6 @@ class Fingerprint:
 
 	def avg(self, list):
 		return [x / self.passes for x in list]
-
-	def metricIndex(self, p):
-		try:
-			if p.ip.src == self.src_ip:
-				# Packet on uplink
-				return 0
-			else:
-				# Packet on downlink
-				return 1
-		except:
-			# Ignores IPv6
-			return -1
 
 	def appendToFile(self, file_path, data):
 		with open(file_path, "a+") as f:
