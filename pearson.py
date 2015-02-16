@@ -1,4 +1,5 @@
 from itertools import imap
+import math
 
 def pearson(x, y):
 	n = len(x)
@@ -14,17 +15,16 @@ def pearson(x, y):
 	else:
 		return num / den
 
-with open("fingerprints/traces", "r") as f:
-	fingerprint_traces = [[int(y) for y in x.strip().split(", ")] for x in f]
-
 with open("test/traces", "r") as f:
-	captured_traces = [[int(y) for y in x.strip().split(", ")] for x in f]
+	fingerprint_traces = [[int(y) for y in x.strip().split(", ")] for x in f]
+	f.close()
 
-for c in captured_traces:
-	a = [-1]*len(fingerprint_traces)
+with open("test2/traces", "r") as f:
+	captured_traces = [[int(y) for y in x.strip().split(", ")] for x in f]
+	f.close()
+
+for j,c in enumerate(captured_traces):
+	distance = [-1]*len(fingerprint_traces)
 	for i,f in enumerate(fingerprint_traces):
-		a[i] = abs(float(f[0])/f[1] - float(c[0])/c[1])
-		#a[i] = #abs(f[0]-c[0])+abs(f[1]-c[1])
-	#print sorted(a)
-	print c
-	print a.index(min(a)) + 1
+		distance[i] = math.sqrt( (c[0]-f[0])**2 + (c[1]-f[1])**2)
+	print "TRACE %d guess: %s" % (j,distance.index(min(distance)))

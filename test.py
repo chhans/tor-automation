@@ -1,22 +1,42 @@
-from random import randint
+import pyshark
 
-max_index = 4
-site_number = 5
-random = True
+def analyze(in_path):
+	# metrics: [packets on uplink, packets on downlink]
+	metrics = [0, 0]
+	cap = pyshark.FileCapture(in_path)
+	for p in cap:
+		n = analyzePacket(p)
+		i = metricIndex(p)
+		if i != -1:
+			metrics[i] += n
+	return metrics
 
-site_indices = [0]*site_number
+def analyzePacket(p):
+	try:
+		if p.highest_layer == "DATA":
+			n = len(re.findall("17030[0123]0230", p.data.data))
+			if n == 0:
+				n = len(re.findall("17030[0123]021a", p.data.data))
+			return n
+		elif p.highest_layer == "SSL":
+			if p.ssl.record_length == "560" or p.ssl.record_length == "543":
+				return 1
+		return 0
+	except:
+		return 0
 
-if random:
-	for i in range(0, site_number):
-		site_indices[i] = randint(0, max_index)
-else:
-	site_indices = range(0, site_number)
+def metricIndex(p):
+	try:
+		if p.ip.src == self.src_ip:
+			# Packet on uplink
+			return 0
+		else:
+			# Packet on downlink
+			return 1
+	except:
+		# Ignores IPv6
+		return -1
 
-print site_indices
+file_path = "./100/captures/37-0.cap"
 
-
-with open("alexa.csv", "r") as f:
-	sites = [next(f) for x in xrange(max_index)]
-
-for i in site_indices:
-	print "http://"+sites[i].split(',', 1)[1][:-1]
+print analyze(file_path)
