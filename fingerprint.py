@@ -10,7 +10,6 @@ class Fingerprint:
 
 	def makeFingerprints(self, in_path):
 		self.clearPreviousData(in_path)
-		totalStr = ""
 		for i in range(0, count):
 			totalMetrics = None
 			for j in range(0, passes):
@@ -21,8 +20,7 @@ class Fingerprint:
 
 			totalMetrics = self.avg(totalMetrics)
 			print "Trace for site %d: %s" % (i, totalMetrics)
-			totalStr += "%s\n" % ", ".join( str(x) for x in totalMetrics )
-		self.appendToFile("%straces" % in_path, totalStr)
+			self.appendToFile("%straces" % in_path, "%s\n" % ", ".join( str(x) for x in totalMetrics ))
 
 	def clearPreviousData(self, in_path):
 		try:
@@ -33,7 +31,7 @@ class Fingerprint:
 	def analyze(self, in_path):
 		# metrics: [packets on uplink, packets on downlink]
 		metrics = [0, 0]
-		cap = pyshark.FileCapture(in_path)
+		cap = pyshark.FileCapture(in_path, display_filter="frame contains 17:03:03 or frame contains 17:03:02 or frame contains 17:03:01 or frame contains 17:03:00")
 		for p in cap:
 			n = self.analyzePacket(p)
 			i = self.metricIndex(p)
