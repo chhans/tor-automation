@@ -77,8 +77,8 @@ if __name__ == "__main__":
 	max_index = 100
 	random = True
 
-	out_path = "./10-rand-closed/"
-	iface = "en0"
+	out_path = "./10_rand_no_js/"
+	iface = "eth1"
 
 	site_indices = [0]*site_number
 	if random:

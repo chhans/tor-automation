@@ -79,8 +79,8 @@ class Fingerprint:
 if __name__ == "__main__":
 	count = 10
 	passes = 1
-	in_path = "./10-rand-closed/"
-	src_ip = "192.168.1.5"
+	in_path = "./10_rand_no_js/"
+	src_ip = "129.241.208.200"
 
 	f = Fingerprint(count, passes, src_ip)
 	f.makeFingerprints(in_path)
