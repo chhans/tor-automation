@@ -11,9 +11,9 @@ class Fingerprint:
 
 	def makeFingerprints(self, in_path):
 		self.clearPreviousData(in_path)
-		for i in range(0, count):
+		for i in range(0, self.count):
 			totalMetrics = None
-			for j in range(0, passes):
+			for j in range(0, self.passes):
 				file_path = "%scaptures/%d-%d.cap" % (in_path, i, j)
 
 				metrics = self.analyze(file_path)
@@ -79,7 +79,7 @@ class Fingerprint:
 if __name__ == "__main__":
 	count = 10
 	passes = 1
-	in_path = "./10_rand_no_js/"
+	in_path = "./10_js/"
 	src_ip = "129.241.208.200"
 
 	f = Fingerprint(count, passes, src_ip)

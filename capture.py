@@ -5,11 +5,12 @@ import subprocess
 import os
 import signal
 
+from pyvirtualdisplay import Display
+
 class Capture:
 
-	def __init__(self, site_indices, random, passes, max_index):
+	def __init__(self, site_indices, passes, max_index):
 		self.site_indices = site_indices
-		self.random = random
 		self.passes = passes
 
 		with open("alexa.csv", "r") as f:
@@ -18,19 +19,23 @@ class Capture:
 
 	def startCapture(self, out_path, iface):
 		self.clearPreviousData(out_path)
+
+		display = Display(visible=0, size=(800, 600))
+		display.start()
+
 		for i, s in enumerate(self.site_indices):
+			address = self.getAddress(s)
+			self.updateCaptureList(out_path, address)
+			# Creates directories if they don't exist
+			self.createDirectories(out_path)
 			for j in range(0, self.passes):
-				# Creates directories if they don't exist
-				self.createDirectories(out_path)
 				file_name = "%d-%d.cap" % (i, j)
 				file_path = "%scaptures/%s" % (out_path, file_name)
-				address = self.getAddress(s)
-				self.updateCaptureList(out_path, address)
-
+				
 				tsharkProcess = self.capture(iface, file_path)
 				self.getPage(address)
-				#tsharkProcess.terminate()
 				os.killpg(tsharkProcess.pid, signal.SIGTERM)
+		display.stop()
 
 	def clearPreviousData(self, out_path):
 		try:
@@ -67,7 +72,7 @@ class Capture:
 		try:
 			driver.get(addr)
 		except:
-			print "asdfa"
+			pass
 			# TODO: Log
 		driver.quit()
 
@@ -77,7 +82,7 @@ if __name__ == "__main__":
 	max_index = 100
 	random = True
 
-	out_path = "./10_rand_no_js/"
+	out_path = "./10_nojs/"
 	iface = "eth1"
 
 	site_indices = [0]*site_number
@@ -87,5 +92,7 @@ if __name__ == "__main__":
 	else:
 		site_indices = range(0, site_number)
 
-	c = Capture(site_indices, random, passes, max_index)
+	site_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+	c = Capture(site_indices, passes, max_index)
 	c.startCapture(out_path, iface)
