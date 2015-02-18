@@ -35,16 +35,16 @@ if __name__ == "__main__":
 	js = False
 	world_size = 100
 
-	captureSetup(js, pages, fpath, passes, world_size)
-	fingerprintSetup(len(pages), passes, fpath)
+	#captureSetup(js, pages, fpath, passes, world_size)
+	#fingerprintSetup(len(pages), passes, fpath)
 
 	passes = 1
 	pages = test_pages
 
-	captureSetup(js, pages, cpath, passes, world_size)
-	fingerprintSetup(len(pages), passes, cpath)
+	#captureSetup(js, pages, cpath, passes, world_size)
+	#fingerprintSetup(len(pages), passes, cpath)
 
-	correlateSetup(fpath, cpath)
+	#correlateSetup(fpath, cpath)
 
 	# Experiment no. 2
 	# Javascript 	enabled
@@ -57,13 +57,13 @@ if __name__ == "__main__":
 	pages = range(0, 100)
 	js = True
 
-	captureSetup(js, pages, fpath, passes, world_size)
-	fingerprintSetup(len(pages), passes, cpath)
+	#captureSetup(js, pages, fpath, passes, world_size)
+	#fingerprintSetup(len(pages), passes, fpath)
 
 	passes = 1
 	pages = test_pages
 
-	captureSetup(js, pages, cpath, passes, world_size)
-	fingerprintSetup(len(pages), passes, cpath)
+	#captureSetup(js, pages, cpath, passes, world_size)
+	#fingerprintSetup(len(pages), passes, cpath)
 
-	correlate(fpath, cpath)
+	correlateSetup(fpath, cpath)

@@ -22,6 +22,7 @@ class Correlate:
 			f.close()
 
 	def calculate(self):
+		tot_result = ""
 		for i, c in enumerate(self.c_traces):
 			distance_vector = [-1]*len(self.f_traces)
 			for j, f in enumerate(self.f_traces):
@@ -32,11 +33,16 @@ class Correlate:
 			guess_rank = self.getGuessRank(sorted_indices, correct_index)
 
 			if guess_rank == 0:
-				print "%d: Correct guess for site\t %s" % (i, self.c_sites[i])
+				tot_result += "%d: Correct guess for site\t %s\n" % (i, self.c_sites[i])
 			else:
-				print "%d: Incorrect guess for site\t %s (%d)" % (i, self.c_sites[i], guess_rank)
+				tot_result += "%d: Incorrect guess for site\t %s (%d)\n" % (i, self.c_sites[i], guess_rank)
 
 			self.storeResult(i, distance_vector, sorted_indices, guess_rank)
+		# Store the total result of the experiment
+		print tot_result
+		with open("%stotal-results.txt" % self.capture_path, "w") as f:
+			f.write(tot_result)
+			f.close()
 
 	# Get the indices of the distance_vector sorted by the value of the index
 	def getSortedIndices(self, distance_vector):
@@ -61,7 +67,7 @@ class Correlate:
 		tot_str = "%s:%s\n%d\n" % (self.c_sites[i], self.c_traces[i], guess_rank)
 		for guess in sorted_indices:
 			tot_str += "%s:%s:%s\n" % (self.f_sites[guess], distance_vector[guess], self.f_traces[guess])
-		with open("%s%d-results.txt" % (capture_path, i), "w") as f:
+		with open("%s%d-results.txt" % (self.capture_path, i), "w") as f:
 			f.write(tot_str)
 			f.close()
 

@@ -24,10 +24,10 @@ class Capture:
 		display.start()
 
 		for i, s in enumerate(self.site_indices):
-			address = self.getAddress(s)
-			self.updateCaptureList(out_path, address)
 			# Creates directories if they don't exist
 			self.createDirectories(out_path)
+			address = self.getAddress(s)
+			self.updateCaptureList(out_path, address)
 			for j in range(0, self.passes):
 				file_name = "%d-%d.cap" % (i, j)
 				file_path = "%scaptures/%s" % (out_path, file_name)

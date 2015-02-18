@@ -37,6 +37,9 @@ class Fingerprint:
 			cap = pcapy.open_offline(in_path)
 			(header, payload) = cap.next()
 			while header:
+				if self.isNoise(header, payload):
+					(header,payload) = cap.next()
+					continue
 				n = len(re.findall("\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]", payload))
 				i = self.metricIndex(payload)
 				if i != -1:
@@ -45,6 +48,15 @@ class Fingerprint:
 		except pcapy.PcapError:
 			pass
 		return metrics
+
+	# Returns true if the supplied header indicates packet length of 66 (ACK etc) or if it is part of a TLS handshake
+	def isNoise(self, header, payload):
+		if header.getlen() == 66:
+			return True
+		elif len(re.findall("\x16\x03[\x00\x01\x02\x03]", payload)) > 0:
+			print "HANDSHAKE"
+			return True
+		return False
 	
 	def metricIndex(self, payload):
 		try:
