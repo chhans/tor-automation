@@ -1,0 +1,10 @@
+0: Incorrect guess for site      http://google.com (7)
+1: Incorrect guess for site      http://facebook.com (1)
+2: Correct guess for site        http://youtube.com
+3: Incorrect guess for site      http://baidu.com (3)
+4: Incorrect guess for site      http://twitter.com (5)
+5: Incorrect guess for site      http://instagram.com (12)
+6: Incorrect guess for site      http://tumblr.com (14)
+7: Incorrect guess for site      http://netflix.com (76)
+8: Incorrect guess for site      http://bbc.co.uk (9)
+9: Correct guess for site        http://nytimes.com
