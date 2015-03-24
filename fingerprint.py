@@ -54,7 +54,7 @@ class Fingerprint:
 				ul = self.isOnUplink(payload)
 				for cell in range(0, n):
 					c = TorCell(ul)
-					c.timestamp = ts
+					c.ts = ts
 					cells.append(c)
 				if ul:
 					metrics[0] += n
@@ -62,8 +62,8 @@ class Fingerprint:
 					metrics[1] += n
 
 				# Inter-packet time
-				if n > 0 and len(cells) > 1 and ts != -1 and cells[len(cells)-1-n].timestamp != -1:
-					diff = ts - cells[len(cells)-1-n].timestamp
+				if n > 0 and len(cells) > 1 and ts != -1 and cells[len(cells)-1-n].ts != -1:
+					diff = ts - cells[len(cells)-1-n].ts
 					#metrics.append(diff)
 
 				(header, payload) = cap.next()
