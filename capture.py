@@ -9,11 +9,11 @@ from pyvirtualdisplay import Display
 
 class Capture:
 
-	def __init__(self, site_indices, passes, max_index):
+	def __init__(self, input_file, site_indices, passes, max_index):
 		self.site_indices = site_indices
 		self.passes = passes
 
-		with open("alexa.csv", "r") as f:
+		with open(input_file, "r") as f:
 			self.sites = [next(f) for x in xrange(max_index)]
 			f.close()
 

@@ -1,4 +1,5 @@
 import math
+from itertools import imap
 
 class Correlate:
 	def __init__(self, fingerprint_path, capture_path):
@@ -26,7 +27,8 @@ class Correlate:
 		for i, c in enumerate(self.c_traces):
 			distance_vector = [-1]*len(self.f_traces)
 			for j, f in enumerate(self.f_traces):
-				distance_vector[j] = math.sqrt( (c[0]-f[0])**2 + (c[1]-f[1])**2 + (c[2]-f[2])**2 )
+				#distance_vector[j] = self.pcc(c, f)
+				distance_vector[j] = math.sqrt((c[0]-f[0])**2 + (c[1]-f[1])**2)
 			
 			sorted_indices = self.getSortedIndices(distance_vector)
 			correct_index = self.getCorrectIndex(i)
@@ -43,6 +45,22 @@ class Correlate:
 		with open("%stotal-results.txt" % self.capture_path, "w") as f:
 			f.write(tot_result)
 			f.close()
+
+	# Calculate the Pearson Correlation Coefficient of two variables X and Y
+	def pcc(self, x, y):
+		# Cut longest variable to match short one
+		x = x[:min(len(x), len(y))]
+		y = y[:min(len(x), len(y))]
+		n = len(x)
+		sum_x = float(sum(x))
+		sum_y = float(sum(y))
+		sum_x_sq = sum(map(lambda x: pow(x, 2), x))
+		sum_y_sq = sum(map(lambda x: pow(x, 2), y))
+		psum = sum(imap(lambda x, y: x * y, x, y))
+		num = psum - (sum_x * sum_y/n)
+		den = pow((sum_x_sq - pow(sum_x, 2) / n) * (sum_y_sq - pow(sum_y, 2) / n), 0.5)
+		if den == 0: return 0
+		return num / den
 
 	# Get the indices of the distance_vector sorted by the value of the index
 	def getSortedIndices(self, distance_vector):
@@ -72,8 +90,8 @@ class Correlate:
 			f.close()
 
 if __name__=="__main__":
-	fingerprint_path = "./100_js/"
-	capture_path = "./10_js/"
+	fingerprint_path = "./circuittest_nojs_100/"
+	capture_path = "./circuittest_10_cap/"
 	
 	c = Correlate(fingerprint_path, capture_path)
 	c.calculate()

@@ -1,6 +1,9 @@
 import pcapy
 import socket
 import re
+import sys
+
+from torCell import TorCell
 
 class Fingerprint:
 
@@ -20,7 +23,7 @@ class Fingerprint:
 				totalMetrics = self.add(totalMetrics, metrics)
 
 			totalMetrics = self.avg(totalMetrics)
-			print "Trace for site %d: %s" % (i, totalMetrics)
+			#print "Trace for site %d: %s" % (i, totalMetrics)
 			self.appendToFile("%straces" % in_path, "%s\n" % ", ".join( str(x) for x in totalMetrics ))
 
 	def clearPreviousData(self, in_path):
@@ -30,34 +33,97 @@ class Fingerprint:
 			pass
 
 	def analyze(self, in_path):
-		# metrics: [packets on uplink, packets on downlink, total transmitted bytes]
-		metrics = [0, 0, 0]
+		cells = []
+		# Cells up, cells down
+		metrics = [0, 0]
 
 		try:
 			cap = pcapy.open_offline(in_path)
-			total_bytes = 0
 			(header, payload) = cap.next()
+
 			while header:
-				# Filter out the noise packets
+				# Filter out noise packets
 				if self.isNoise(header, payload):
-					(header,payload) = cap.next()
+					(header, payload) = cap.next()
 					continue
 
-				# Metrics 0 and 1 (TLS headers)
+				l = len(payload) - (len(payload) % 600)
+				# Number of TLS headers on uplink/downlink
 				n = self.getTLSHeaders(payload)
-				if self.isOnUplink(payload):
+				ts = self.getTimestamp(header)
+				ul = self.isOnUplink(payload)
+				for cell in range(0, n):
+					c = TorCell(ul)
+					c.timestamp = ts
+					cells.append(c)
+				if ul:
 					metrics[0] += n
 				else:
 					metrics[1] += n
 
-				# Metric 2 (total transmitted bytes)
-				total_bytes += header.getlen()
+				# Inter-packet time
+				if n > 0 and len(cells) > 1 and ts != -1 and cells[len(cells)-1-n].timestamp != -1:
+					diff = ts - cells[len(cells)-1-n].timestamp
+					#metrics.append(diff)
 
 				(header, payload) = cap.next()
-			metrics[2] = (total_bytes - (total_bytes % 10000)) / 10000
+
 		except pcapy.PcapError:
 			pass
+		except:
+			print "ERROR", sys.exc_info()[0]
+		
+		metrics[0] = len(cells)
+		#metrics[2] = int(round((cells[1].timestamp - cells[0].timestamp)/100)*100)
+
+		# Total time
+		#total_time = cells[len(cells)-1].timestamp - cells[0].timestamp
+
 		return metrics
+#		# metrics: [packets on uplink, packets on downlink, total transmitted bytes]
+#		metrics = [0, 0]
+#
+#		try:
+#			cap = pcapy.open_offline(in_path)
+#			total_bytes = 0
+#			(header, payload) = cap.next()
+#			timestamp = -1
+#			while header:
+#				# Filter out the noise packets
+#				if self.isNoise(header, payload):
+#					(header,payload) = cap.next()
+#					continue
+#
+#				# Metrics 0 and 1 (TLS headers)
+#				n = self.getTLSHeaders(payload)
+#				if self.isOnUplink(payload):
+#					metrics[0] += n
+#				else:
+#					metrics[1] += n
+#
+#				# Inter-packet time
+#				if timestamp != -1 and n > 0:
+#					pass
+#					#print self.getTimestamp(header) - timestamp
+#					#metrics.append(self.getTimestamp(header)-timestamp)
+#				timestamp = self.getTimestamp(header)
+#				#print metrics
+#
+#				# Metric 2 (total transmitted bytes)
+#				#total_bytes += header.getlen()
+#
+#				(header, payload) = cap.next()
+#			#metrics[2] = (total_bytes - (total_bytes % 10000)) / 10000
+#		except pcapy.PcapError:
+#			pass
+#		return metrics
+
+	# Returns the timestamp of the supplied header
+	def getTimestamp(self, header):
+		try:
+			return header.getts()[0]*1000 + header.getts()[1]
+		except:
+			return -1
 
 	# Returns the number of TLS headers in the payload matching the bytestring
 	def getTLSHeaders(self, payload):
@@ -89,7 +155,7 @@ class Fingerprint:
 			return list2;
 		elif list2 == None:
 			return list1
-		return [list1[i] + list2[i] for i in range(0,len(list1))]
+		return [list1[i] + list2[i] for i in range(0,min(len(list1), len(list2)))]
 
 	def avg(self, list):
 		return [x / self.passes for x in list]
@@ -102,8 +168,14 @@ class Fingerprint:
 if __name__ == "__main__":
 	count = 10
 	passes = 1
-	in_path = "./10_js/"
+	in_path = "./repeat_10_cap/"
 	src_ip = "129.241.208.200"
 
 	f = Fingerprint(count, passes, src_ip)
 	f.makeFingerprints(in_path)
+
+	count = 100
+	f = Fingerprint(count, passes, src_ip)
+	for i in range(10):
+		in_path = "./repeat_100_%i/" % i
+		f.makeFingerprints(in_path)

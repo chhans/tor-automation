@@ -2,7 +2,7 @@
 # For minimum noise, javascript is disabled.
 from selenium import webdriver
 
-js = False
+js = True
 
 class TorProfile(webdriver.FirefoxProfile):
 
