@@ -8,7 +8,14 @@ from torCell import TorCell
 
 tls_header = "\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]"
 src_ip = "129.241.208.200"
-burst_tolerance = 0.5 # TODO: Tune burst detection threshold
+burst_tolerance = 2000
+
+# TODO:
+# Tune burst detection threshold (1000 = 1 second)
+# Test if ignoring bursts with few packets improves accuracy (probably SENDMEs etc.)
+# Performance improvements if necessary: 
+	# Filter out noise packets (easier than regexing whole packet payload)
+	# Do calculations on the fly when reading the dump files.
 
 def makeFingerprint(file_path):
 	cells = []
@@ -18,24 +25,26 @@ def makeFingerprint(file_path):
 		(header, payload) = cap.next()
 
 		while header:
-			# TODO: Filter out noise packets (causes speed-ups as it is easier than regexing the whole packet)
 			cells.extend(extractCell(header, payload))
 			(header, payload) = cap.next()
-			# TODO: Consider doing calculation here, on the fly for improved performance
 	except pcapy.PcapError:
 		pass # Expected error when getting to the end of the pcap
 	except:
 		print "Unexpected error when extracting cells:", sys.exc_info()[0]
 		raise
 
-	analyzeCells(cells)
+	metrics = analyzeCells(cells)
 
-	# TODO: Store result somehow (pickle/strings)
+	with open("%s.fp" % file_path[:-4], "w") as f:
+		f.write("\n".join( str(x) for x in metrics))
+		f.close()
 
 def analyzeCells(cells):
 	# For now, going with metrics [tot.cells down, tot.cells up, avg. down cells in burst, avg. up cells in burst, avg. interburst time]
 	metrics = [0, 0, 0, 0, 0]
-	bursts = []
+	bursts = [[]]
+	inter_burst_times = []
+	burst_cells = [[0, 0]]
 	for i, c in enumerate(cells):
 		# Total cells down/up
 		metrics[c.ul] += 1
@@ -43,9 +52,27 @@ def analyzeCells(cells):
 		if i == 0:
 			continue
 		inter_packet_t = c.ts - cells[i - 1].ts
-		if inter_packet_t < 0:
-			print "WHAT?", c.ts, " - ", cells[i - 1].ts
 
+		# Burst categorization
+		if inter_packet_t < 0:
+			print "ERROR: pcapy source code not updated to support nanosecond accuracy. Quitting."
+			raise
+		elif inter_packet_t > burst_tolerance: # 1000 equals 1 second
+			bursts.append([c])
+			burst_cells.append([not c.ul, c.ul])
+			inter_burst_times.append(inter_packet_t)
+		else:
+			bursts[-1].append(c)
+			burst_cells[-1][c.ul] += 1
+
+	dl_b = [x[0] for x in burst_cells]
+	dl_u = [x[1] for x in burst_cells]
+
+	metrics[2] = sum(dl_b)/len(dl_b)
+	metrics[3] = sum(dl_u)/len(dl_u)
+	metrics[4] = sum(inter_burst_times)/float(len(inter_burst_times))
+
+	return metrics
 
 # Returns an array of the Tor cells present in the packet payload
 def extractCell(header, payload):

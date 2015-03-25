@@ -1,4 +1,7 @@
 *.pyc
+*.fp
+old_captures/
 captures/
 fingerprints/
 log.dat
+notes
