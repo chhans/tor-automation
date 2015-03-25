@@ -3,6 +3,7 @@ import socket
 import re
 import sys
 import os
+import patternsvm as svm
 
 from torCell import TorCell
 
@@ -38,6 +39,8 @@ def makeFingerprint(file_path):
 	with open("%s.fp" % file_path[:-4], "w") as f:
 		f.write("\n".join( str(x) for x in metrics))
 		f.close()
+
+	return metrics
 
 def analyzeCells(cells):
 	# For now, going with metrics [tot.cells down, tot.cells up, avg. down cells in burst, avg. up cells in burst, avg. interburst time]
@@ -99,7 +102,21 @@ def isOnUplink(payload):
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
 
-for directory in ["google.com", "reddit.com", "flickr.com", "wikipedia.org", "youtube.com"]:
-	for cap in os.listdir(directory):
-		if cap[-4:] == ".cap":
-			makeFingerprint("%s/%s" % (directory, cap))
+Y = ["google.com", "reddit.com", "flickr.com", "wikipedia.org", "youtube.com"]
+# Training instances
+for i in range(1):
+	X = []
+	for directory in Y:
+		fp = makeFingerprint("%s/%d.cap" % (directory, i))
+		X.append(fp)
+	svm.train(X, Y)
+
+# Prediction
+x = makeFingerprint("google.com/0.cap")
+print svm.predict(x)
+
+#for directory in Y:
+#	for cap in os.listdir(directory):
+#		if cap[-4:] == ".cap":
+#			fp = makeFingerprint("%s/%s" % (directory, cap))
+#			#svm.train(fp, directory)
