@@ -10,6 +10,7 @@ import sys
 
 sleep_time = 5.0
 browse_time = 60.0 # TODO: Find good value. 2 minutes?
+load_timeout = 120.0
 iface = "eth1"
 urls = ["http://google.com/ncr", "http://wikipedia.org", "http://youtube.com", "http://flickr.com", "http://reddit.com"]
 
@@ -45,7 +46,7 @@ def getFilename(dir):
 def loadPage(url):
 	print "Requesting site %s through Tor" % url
 	driver = webdriver.Firefox(firefox_profile=TorProfile().p)
-	driver.set_page_load_timeout(60)
+	driver.set_page_load_timeout(load_timeout)
 	try:
 		t = browse_time
 		driver.get(url)
@@ -62,7 +63,7 @@ def loadPage(url):
 		print "Error lading page: timed out"
 		time.sleep(sleep_time)
 		driver.close()
-		return
+		return -1
 	except (KeyboardInterrupt, SystemExit):
 		driver.close()
 		raise
@@ -87,6 +88,9 @@ def stopTshark(pid):
 		FNULL = open(os.devnull, 'w')
 		subprocess.Popen("killall tshark", stdout=FNULL, close_fds=True, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
 
+def removeFile(f_path):
+	os.remove(f_path)
+
 def captureWebsite(url):
 	# Create directory for URL
 	dir = (url.split("://")[1]).split("/")[0]
@@ -96,16 +100,21 @@ def captureWebsite(url):
 	f_path = "%s/%s" % (dir, getFilename(dir))
 	tshark_pid = startTshark(f_path)
 	try:
-		loadPage(url)
+		s = loadPage(url)
 		stopTshark(tshark_pid)
+		if s == -1:
+			removeFile(f_path)
 	except (KeyboardInterrupt, SystemExit):
 		stopTshark(tshark_pid)
+		removeFile(f_path)
 		sys.exit()
 	except:
 		print "Unexpected error when capturing website:", sys.exc_info()[0]
 		stopTshark(tshark_pid)
+		removeFile(f_path)
 		raise
 
-captureWebsite("http://google.com")
+captureWebsite("http://youtube.com")
+
 #for url in urls:
-	#captureWebsite(url)
+#	captureWebsite(url)

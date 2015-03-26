@@ -48,6 +48,7 @@ def analyzeCells(cells):
 	bursts = [[]]
 	inter_burst_times = []
 	burst_cells = [[0, 0]]
+
 	for i, c in enumerate(cells):
 		# Total cells down/up
 		metrics[c.ul] += 1
@@ -73,7 +74,7 @@ def analyzeCells(cells):
 
 	metrics[2] = sum(dl_b)/len(dl_b)
 	metrics[3] = sum(dl_u)/len(dl_u)
-	metrics[4] = sum(inter_burst_times)/float(len(inter_burst_times))
+	metrics[4] = 0 if len(inter_burst_times) == 0 else sum(inter_burst_times)/float(len(inter_burst_times))
 
 	return metrics
 
@@ -104,7 +105,7 @@ def isOnUplink(payload):
 
 Y = ["google.com", "reddit.com", "flickr.com", "wikipedia.org", "youtube.com"]
 # Training instances
-for i in range(1):
+for i in range(4):
 	X = []
 	for directory in Y:
 		fp = makeFingerprint("%s/%d.cap" % (directory, i))
@@ -112,8 +113,27 @@ for i in range(1):
 	svm.train(X, Y)
 
 # Prediction
-x = makeFingerprint("google.com/0.cap")
-print svm.predict(x)
+for directory in Y:
+	x = makeFingerprint("%s/2.cap" % directory)
+	print svm.predict(x), "Correct: ", directory
+
+#x = makeFingerprint("google.com/3.cap")
+#print svm.predict(x)
+#
+#x = makeFingerprint("google.com/2.cap")
+#print svm.predict(x)
+#
+#x = makeFingerprint("flickr.com/1.cap")
+#print svm.predict(x)
+#
+#x = makeFingerprint("reddit.com/1.cap")
+#print svm.predict(x)
+#
+#x = makeFingerprint("wikipedia.org/1.cap")
+#print svm.predict(x)
+#
+#x = makeFingerprint("youtube.com/1.cap")
+#print svm.predict(x)
 
 #for directory in Y:
 #	for cap in os.listdir(directory):
