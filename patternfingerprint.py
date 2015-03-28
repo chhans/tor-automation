@@ -3,6 +3,7 @@ import socket
 import re
 import sys
 import os
+import math
 import patternsvm as svm
 
 from torCell import TorCell
@@ -103,40 +104,40 @@ def isOnUplink(payload):
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
 
-Y = ["google.com", "reddit.com", "flickr.com", "wikipedia.org", "youtube.com"]
-# Training instances
-for i in range(4):
+Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com"]
+for i in range(2):
 	X = []
 	for directory in Y:
-		fp = makeFingerprint("%s/%d.cap" % (directory, i))
-		X.append(fp)
+		X.append(makeFingerprint("%s/%s.cap" % (directory, i)))
 	svm.train(X, Y)
 
-# Prediction
-for directory in Y:
-	x = makeFingerprint("%s/2.cap" % directory)
-	print svm.predict(x), "Correct: ", directory
+print svm.predict(makeFingerprint("vimeo.com/2.cap"))
+#
+#x = makeFingerprint("nrk.no/2.cap")
+#print svm.predict(x), "Correct: nrk.no"
+#
+#x = makeFingerprint("vimeo.com/2.cap")
+#print svm.predict(x), "Correct: vimeo"
+#
+#x = makeFingerprint("wikipedia.org/2.cap")
+#print svm.predict(x), "Correct: wikipedia"
 
-#x = makeFingerprint("google.com/3.cap")
-#print svm.predict(x)
-#
-#x = makeFingerprint("google.com/2.cap")
-#print svm.predict(x)
-#
-#x = makeFingerprint("flickr.com/1.cap")
-#print svm.predict(x)
-#
-#x = makeFingerprint("reddit.com/1.cap")
-#print svm.predict(x)
-#
-#x = makeFingerprint("wikipedia.org/1.cap")
-#print svm.predict(x)
-#
-#x = makeFingerprint("youtube.com/1.cap")
-#print svm.predict(x)
 
+#def distance(x, y):
+#	return math.sqrt( (x[0]-y[0])**2 + (x[1]-y[1])**2 )
+#
+#Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com"]
+#X1 = []
+#X2 = []
 #for directory in Y:
-#	for cap in os.listdir(directory):
-#		if cap[-4:] == ".cap":
-#			fp = makeFingerprint("%s/%s" % (directory, cap))
-#			#svm.train(fp, directory)
+#	print directory
+#	for i in range(2):
+#		print makeFingerprint("%s/%d.cap" % (directory, i))
+#	X1.append(makeFingerprint("%s/0.cap" % directory))
+#	X2.append(makeFingerprint("%s/1.cap" % directory))
+#
+#for i, x in enumerate(X2):
+#	print "Testing for %s" % Y[i]
+#	for j, y in enumerate(X1):
+#		print "Distance to %s: %s" % (Y[j], distance(x, y))
+#	print "\n\n" 

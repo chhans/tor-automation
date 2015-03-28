@@ -9,10 +9,10 @@ import time
 import sys
 
 sleep_time = 5.0
-browse_time = 60.0 # TODO: Find good value. 2 minutes?
+browse_time = 120.0 # TODO: Find good value. 2 minutes?
 load_timeout = 120.0
 iface = "eth1"
-urls = ["http://google.com/ncr", "http://wikipedia.org", "http://youtube.com", "http://flickr.com", "http://reddit.com"]
+urls = ["http://youtube.com", "http://vimeo.com", "http://nrk.no", "http://cbsnews.com", "http://ebay.co.uk", "http://amazon.co.uk", "http://google.com", "http://yahoo.com", "http://wikipedia.org"]
 
 def startProgress():
 	global progress_x
@@ -114,7 +114,4 @@ def captureWebsite(url):
 		removeFile(f_path)
 		raise
 
-captureWebsite("http://youtube.com")
-
-#for url in urls:
-#	captureWebsite(url)
+captureWebsite("http://vimeo.com")
