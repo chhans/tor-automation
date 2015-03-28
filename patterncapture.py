@@ -12,7 +12,7 @@ sleep_time = 5.0
 browse_time = 120.0 # TODO: Find good value. 2 minutes?
 load_timeout = 120.0
 iface = "eth1"
-urls = ["http://youtube.com", "http://vimeo.com", "http://nrk.no", "http://cbsnews.com", "http://ebay.co.uk", "http://amazon.co.uk", "http://google.com", "http://yahoo.com", "http://wikipedia.org"]
+urls = ["http://amazon.co.uk", "http://cbsnews.com", "http://ebay.co.uk", "http://google.com/ncr", "http://nrk.no", "http://vimeo.com", "http://wikipedia.org", "http://yahoo.com", "http://youtube.com"]
 
 def startProgress():
 	global progress_x
@@ -113,5 +113,3 @@ def captureWebsite(url):
 		stopTshark(tshark_pid)
 		removeFile(f_path)
 		raise
-
-captureWebsite("http://vimeo.com")

@@ -7,6 +7,7 @@ import math
 import patternsvm as svm
 
 from torCell import TorCell
+from siteModel import SiteModel
 
 tls_header = "\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]"
 src_ip = "129.241.208.200"
@@ -17,7 +18,7 @@ burst_tolerance = 2000
 # Test if ignoring bursts with few packets improves accuracy (probably SENDMEs etc.)
 # Performance improvements if necessary: 
 	# Filter out noise packets (easier than regexing whole packet payload)
-	# Do calculations on the fly when reading the dump files.
+	# Do calculations on the fly when reading the dump files
 
 def makeFingerprint(file_path):
 	cells = []
@@ -44,8 +45,7 @@ def makeFingerprint(file_path):
 	return metrics
 
 def analyzeCells(cells):
-	# For now, going with metrics [tot.cells down, tot.cells up, avg. down cells in burst, avg. up cells in burst, avg. interburst time]
-	metrics = [0, 0, 0, 0, 0]
+	metrics = [0, 0, 0, 0, 0, 0]
 	bursts = [[]]
 	inter_burst_times = []
 	burst_cells = [[0, 0]]
@@ -65,7 +65,7 @@ def analyzeCells(cells):
 		elif inter_packet_t > burst_tolerance: # 1000 equals 1 second
 			bursts.append([c])
 			burst_cells.append([not c.ul, c.ul])
-			inter_burst_times.append(inter_packet_t)
+			inter_burst_times.append(normalizeIPT(inter_packet_t))
 		else:
 			bursts[-1].append(c)
 			burst_cells[-1][c.ul] += 1
@@ -75,9 +75,14 @@ def analyzeCells(cells):
 
 	metrics[2] = sum(dl_b)/len(dl_b)
 	metrics[3] = sum(dl_u)/len(dl_u)
-	metrics[4] = 0 if len(inter_burst_times) == 0 else sum(inter_burst_times)/float(len(inter_burst_times))
+	metrics[4] = len(bursts)
+	metrics[5] = 0 if len(inter_burst_times) == 0 else sum(inter_burst_times)/len(inter_burst_times)
 
 	return metrics
+
+# Rounds the inter-packet time down to the nearest whole second
+def normalizeIPT(t):
+	return int(t/1000)
 
 # Returns an array of the Tor cells present in the packet payload
 def extractCell(header, payload):
@@ -104,40 +109,23 @@ def isOnUplink(payload):
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
 
-Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com"]
-for i in range(2):
-	X = []
+Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
+models = [SiteModel(x) for x in Y]
+
+for i in range(3):
 	for directory in Y:
-		X.append(makeFingerprint("%s/%s.cap" % (directory, i)))
-	svm.train(X, Y)
+		fp = makeFingerprint("%s/%s.cap" % (directory, i))
+		print Y.index(directory)
+		models[Y.index(directory)].train(fp)
 
-print svm.predict(makeFingerprint("vimeo.com/2.cap"))
-#
-#x = makeFingerprint("nrk.no/2.cap")
-#print svm.predict(x), "Correct: nrk.no"
-#
-#x = makeFingerprint("vimeo.com/2.cap")
-#print svm.predict(x), "Correct: vimeo"
-#
-#x = makeFingerprint("wikipedia.org/2.cap")
-#print svm.predict(x), "Correct: wikipedia"
+print models[0].inter_burst_times
 
-
-#def distance(x, y):
-#	return math.sqrt( (x[0]-y[0])**2 + (x[1]-y[1])**2 )
+#for i in range(2):
+#	X = []
+#	for directory in Y:
+#		X.append(makeFingerprint("%s/%s.cap" % (directory, i)))
+#	svm.train(X, Y)
 #
-#Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com"]
-#X1 = []
-#X2 = []
-#for directory in Y:
-#	print directory
-#	for i in range(2):
-#		print makeFingerprint("%s/%d.cap" % (directory, i))
-#	X1.append(makeFingerprint("%s/0.cap" % directory))
-#	X2.append(makeFingerprint("%s/1.cap" % directory))
-#
-#for i, x in enumerate(X2):
-#	print "Testing for %s" % Y[i]
-#	for j, y in enumerate(X1):
-#		print "Distance to %s: %s" % (Y[j], distance(x, y))
-#	print "\n\n" 
+#for i in range(2, 3):
+#	for directory in Y:
+#		print directory, svm.predict(makeFingerprint("%s/%s.cap" % (directory, i)))
