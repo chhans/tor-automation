@@ -109,16 +109,30 @@ def isOnUplink(payload):
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
 
+# Create class models with training data
 Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
 models = [SiteModel(x) for x in Y]
-
-for i in range(3):
+for i in [0,1]:
 	for directory in Y:
 		fp = makeFingerprint("%s/%s.cap" % (directory, i))
-		print Y.index(directory)
 		models[Y.index(directory)].train(fp)
 
-print models[0].inter_burst_times
+results = [0]*len(Y)
+for directory in Y:
+	prediction = []
+	fp = makeFingerprint("%s/2.cap" % directory)
+	for m in models:
+		prediction.append(m.predict(fp))
+	print directory
+	sort = sorted(range(len(prediction)), key=lambda k: prediction[k])
+	sort.reverse()
+	for i, x in enumerate(sort):
+		print "\t", Y[x], prediction[x]
+		if Y[x] == directory:
+			results[i] += 1
+	print "\n"
+
+print "Total results: ", results
 
 #for i in range(2):
 #	X = []
