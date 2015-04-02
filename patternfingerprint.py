@@ -2,16 +2,16 @@ import pcapy
 import socket
 import re
 import sys
-import os
-import math
-import patternsvm as svm
 
+from classifier import Classifier
 from torCell import TorCell
-from siteModel import SiteModel
 
 tls_header = "\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]"
 src_ip = "129.241.208.200"
 burst_tolerance = 2000
+
+per_burst_weight = 1.0
+total_cells_weight = 1.0
 
 # TODO:
 # Tune burst detection threshold (1000 = 1 second)
@@ -109,37 +109,47 @@ def isOnUplink(payload):
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
 
-# Create class models with training data
-Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
-models = [SiteModel(x) for x in Y]
-for i in [0,1]:
-	for directory in Y:
-		fp = makeFingerprint("%s/%s.cap" % (directory, i))
-		models[Y.index(directory)].train(fp)
+def indexOfSortedValues(l, descending=False):
+	sort = sorted(l, reverse=descending)
+	indices = [l.index(x) for x in sort]
+	return indices
 
-results = [0]*len(Y)
-for directory in Y:
-	prediction = []
-	fp = makeFingerprint("%s/2.cap" % directory)
-	for m in models:
-		prediction.append(m.predict(fp))
-	print directory
-	sort = sorted(range(len(prediction)), key=lambda k: prediction[k])
-	sort.reverse()
-	for i, x in enumerate(sort):
-		print "\t", Y[x], prediction[x]
-		if Y[x] == directory:
-			results[i] += 1
-	print "\n"
+def calculateDistanceVotes(vector, w):
+	G = indexOfSortedValues(vector)
+	l = float(len(vector))
+	votes = [2*w - 2*x/l*w for x in G]
+	return votes
 
-print "Total results: ", results
-
-#for i in range(2):
-#	X = []
-#	for directory in Y:
-#		X.append(makeFingerprint("%s/%s.cap" % (directory, i)))
-#	svm.train(X, Y)
+#Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
+#total_results = [0]*len(Y)
+#iterations = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
 #
-#for i in range(2, 3):
+#for pattern in iterations:
+#	# Create class models with training data
+#	models = [Classifier(x) for x in Y]
+#	for i in [pattern[0], pattern[1]]:
+#		for directory in Y:
+#			fp = makeFingerprint("PatternDumps/%s/%s.cap" % (directory, i))
+#			models[Y.index(directory)].train(fp)
+#
+#	#Predictions
 #	for directory in Y:
-#		print directory, svm.predict(makeFingerprint("%s/%s.cap" % (directory, i)))
+#		fp = makeFingerprint("PatternDumps/%s/%s.cap" % (directory, pattern[2]))
+#		prediction_votes = []
+#		per_burst_dist = []
+#		total_dist = []
+#		for m in models:
+#			prediction_votes.append(m.predict(fp))
+#			per_burst_dist.append(m.perBurstDistance(fp))
+#			total_dist.append(m.totalDistance(fp))
+#
+#		per_burst_votes = calculateDistanceVotes(per_burst_dist, per_burst_weight)
+#		total_dist_votes = calculateDistanceVotes(total_dist, total_cells_weight)
+#		total_votes = [prediction_votes[i] + per_burst_votes[i] + total_dist_votes[i] for i in range(len(models))]
+#
+#		print ["%.2f" % x for x in total_votes]
+#		res = indexOfSortedValues(total_votes, descending=True)
+#		total_results[res.index(Y.index(directory))] += 1
+#
+#t_sum = sum(total_results)
+#print total_results, ("%.2f" % (float(total_results[0])/sum(total_results)))
