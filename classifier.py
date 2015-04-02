@@ -79,7 +79,7 @@ class Classifier:
 
 		dist = abs(b - mean)
 		perfect_match = dist <= 0.5 and std <= 0.5
-		limit = 4.0
+		limit = 2.0
 
 		if perfect_match:
 			print "Numburst PF", p
@@ -148,7 +148,7 @@ class Classifier:
 		up = metrics[i_u]
 		return self.euclidianDist(dn, up, mean_dn, mean_up)
 
-	# For each metric or metric-pair, calculate a vote in the range [-1, 1] 
+	# For each metric or metric-pair, calculate a vote in the range [-1, 4] 
 	# depending on how well the supplied metric correlates weighted on the standard deviation of the training metrics
 	def predict(self, metrics, c):
 		p = c == self.label

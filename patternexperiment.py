@@ -5,7 +5,7 @@ import sys
 
 dump_path = "PatternDumps"
 monitored_sites = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
-#monitored_sites = ["google.com", "nrk.no"]
+#monitored_sites = ["google.com", "nrk.no", "vimeo.com", "youtube.com"] 88%
 
 per_burst_weight = 1.0
 total_cells_weight = 1.0
@@ -29,10 +29,9 @@ def calculateDistanceVotes(vector, w):
 				j -= 1
 
 		v = 2*w - 2*r/l*w
-		#if v == 2.0:
-		#	v = 4.0*w
+		if v == 2.0:
+			v += 2.0
 		votes.append(v)
-	#votes = [2*w - 2*x/l*w for x in G]
 	return votes
 
 def createTrainingSets(n):
@@ -75,15 +74,10 @@ def closedWorldExperiment(n):
 
 			per_burst_votes = calculateDistanceVotes(per_burst_dist, per_burst_weight)
 			total_dist_votes = calculateDistanceVotes(total_dist, total_cells_weight)
+
 			total_votes = [prediction_votes[i] + per_burst_votes[i] + total_dist_votes[i] for i in range(len(clf))]
 			res = indexOfSortedValues(total_votes, descending=True)
 
-			#print site, prediction_votes
-
-			#if res.index(monitored_sites.index(site)) == 0:
-			#	print "Correct\t\t", max(total_votes)
-			#else:
-			#	print "Incorrect\t", max(total_votes)
 			j = monitored_sites.index(site)
 			while True:
 				try:
@@ -105,7 +99,3 @@ if __name__=="__main__":
 		sys.exit()
 
 	closedWorldExperiment(num_train)
-
-	#test = [1435.3301014052481, 4070.587089106435, 2047.7744626789347, 100.12492197250393, 674.202677241792, 3816.736957140222, 85.21296849658508, 908.0397843707069, 4901.56232746254]
-	#print indexOfSortedValues(test)
-	#print calculateDistanceVotes(test, 1.0)

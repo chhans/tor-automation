@@ -3,15 +3,12 @@ import socket
 import re
 import sys
 
-from classifier import Classifier
 from torCell import TorCell
 
 tls_header = "\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]"
 src_ip = "129.241.208.200"
-burst_tolerance = 2000
-
-per_burst_weight = 1.0
-total_cells_weight = 1.0
+burst_tolerance = 2500
+burst_size_limit = 1
 
 # TODO:
 # Tune burst detection threshold (1000 = 1 second)
@@ -63,9 +60,19 @@ def analyzeCells(cells):
 			print "ERROR: pcapy source code not updated to support nanosecond accuracy. Quitting."
 			raise
 		elif inter_packet_t > burst_tolerance: # 1000 equals 1 second
+			new_ibt = normalizeIPT(inter_packet_t)
+			if len(bursts[-1]) < burst_size_limit:
+				for dc in bursts[-1]:
+					metrics[dc.ul] -= 1
+				bursts.pop()
+				burst_cells.pop()
+				try:
+					new_ibt += inter_burst_times.pop()
+				except:
+					pass
 			bursts.append([c])
 			burst_cells.append([not c.ul, c.ul])
-			inter_burst_times.append(normalizeIPT(inter_packet_t))
+			inter_burst_times.append(new_ibt)
 		else:
 			bursts[-1].append(c)
 			burst_cells[-1][c.ul] += 1
@@ -108,16 +115,3 @@ def isOnUplink(payload):
 	except:
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
-
-def indexOfSortedValues(l, descending=False):
-	sort = sorted(l, reverse=descending)
-	indices = [l.index(x) for x in sort]
-	return indices
-
-def calculateDistanceVotes(vector, w):
-	G = indexOfSortedValues(vector)
-	l = float(len(vector))
-	votes = [2*w - 2*x/l*w for x in G]
-	return votes
-
-makeFingerprint("PatternDumps/vimeo.com/5.cap")
