@@ -12,6 +12,8 @@ sleep_time = 5.0
 browse_time = 120.0 # TODO: Find good value. 2 minutes?
 load_timeout = 120.0
 iface = "eth1"
+dump_path = "PatternDumps"
+
 urls = ["http://amazon.co.uk", "http://cbsnews.com", "http://ebay.co.uk", "http://google.com/ncr", "http://nrk.no", "http://vimeo.com", "http://wikipedia.org", "http://yahoo.com", "http://youtube.com"]
 
 def startProgress():
@@ -74,7 +76,7 @@ def loadPage(url):
 		raise
 
 def startTshark(f_path):
-	print "Capturing on interface eth0"
+	print "Capturing on interface %s" % iface
 	command = "tshark -f tcp -i %s -w %s" % (iface, f_path)
 	FNULL = open(os.devnull, 'w')
 	tshark_proc = subprocess.Popen(command, stdout=FNULL, close_fds=True, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
@@ -93,7 +95,8 @@ def removeFile(f_path):
 
 def captureWebsite(url):
 	# Create directory for URL
-	dir = (url.split("://")[1]).split("/")[0]
+	folder = (url.split("://")[1]).split("/")[0]
+	dir = "%s/%s" % (dump_path, folder)
 	mkdir(dir)
 
 	# Build file path for website visit instance and start capture
@@ -113,3 +116,6 @@ def captureWebsite(url):
 		stopTshark(tshark_pid)
 		removeFile(f_path)
 		raise
+
+for url in urls:
+	captureWebsite(url)

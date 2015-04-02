@@ -56,6 +56,8 @@ class Classifier:
 			return 0.0
 		elif dist > 2*mean:
 			return -1.0
+		elif dist == 0 and std == 0:
+			return 4.0 # Perfect score
 		else:
 			v = (1-dist)/1
 			return v if v >= -0.9 else -0.9

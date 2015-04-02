@@ -5,6 +5,7 @@ import sys
 
 dump_path = "PatternDumps"
 monitored_sites = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
+#monitored_sites = ["google.com", "nrk.no"]
 
 per_burst_weight = 1.0
 total_cells_weight = 1.0
@@ -17,7 +18,17 @@ def indexOfSortedValues(l, descending=False):
 def calculateDistanceVotes(vector, w):
 	G = indexOfSortedValues(vector)
 	l = float(len(vector))
-	votes = [2*w - 2*x/l*w for x in G]
+	votes = []
+	for i in range(len(vector)):
+		try:
+			r = G.index(i)
+		except:
+			r = G.index(i-1)
+		v = 2*w - 2*r/l*w
+		if v == 2.0:
+			v = 4.0*w
+		votes.append(v)
+	#votes = [2*w - 2*x/l*w for x in G]
 	return votes
 
 def createTrainingSets(n):
@@ -26,14 +37,7 @@ def createTrainingSets(n):
 		l.append(range(0, i)+range(i+1, n)+range(i, i+1))
 	return l
 
-if __name__=="__main__":
-
-	try:
-		num_train = int(sys.argv[1]) + 1
-	except:
-		print "Usage: python %s <number of training instances>" % sys.argv[0]
-		sys.exit()
-
+def closedWorldExperiment(n):
 	training_sets = createTrainingSets(num_train)
 	total_results = [0]*len(monitored_sites)
 	per_site_results = {key: [0]*len(monitored_sites) for key in monitored_sites}
@@ -68,46 +72,28 @@ if __name__=="__main__":
 			per_burst_votes = calculateDistanceVotes(per_burst_dist, per_burst_weight)
 			total_dist_votes = calculateDistanceVotes(total_dist, total_cells_weight)
 			total_votes = [prediction_votes[i] + per_burst_votes[i] + total_dist_votes[i] for i in range(len(clf))]
-
 			res = indexOfSortedValues(total_votes, descending=True)
+
+			if res.index(monitored_sites.index(site)) == 0:
+				print "Correct\t\t", max(total_votes)
+			else:
+				print "Incorrect\t", max(total_votes)
 			per_site_results[site][res.index(monitored_sites.index(site))] += 1
 			total_results[res.index(monitored_sites.index(site))] += 1
 
 	print per_site_results
 	print "Total results: ", total_results, ("%.2f" % (float(total_results[0])/sum(total_results)) )
 
+if __name__=="__main__":
 
+	try:
+		num_train = int(sys.argv[1]) + 1
+	except:
+		print "Usage: python %s <number of training instances>" % sys.argv[0]
+		sys.exit()
 
+	closedWorldExperiment(num_train)
 
-#Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
-#total_results = [0]*len(Y)
-#iterations = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
-#
-#for pattern in iterations:
-#	# Create class models with training data
-#	models = [SiteModel(x) for x in Y]
-#	for i in [pattern[0], pattern[1]]:
-#		for directory in Y:
-#			fp = fingerprint.makeFingerprint("%s/%s.cap" % (directory, i))
-#			models[Y.index(directory)].train(fp)
-#
-#	#Predictions
-#	for directory in Y:
-#		fp = fingerprint.makeFingerprint("%s/%s.cap" % (directory, pattern[2]))
-#		prediction_votes = []
-#		per_burst_dist = []
-#		total_dist = []
-#		for m in models:
-#			prediction_votes.append(m.predict(fp))
-#			per_burst_dist.append(m.perBurstDistance(fp))
-#			total_dist.append(m.totalDistance(fp))
-#
-#		per_burst_votes = calculateDistanceVotes(per_burst_dist, per_burst_weight)
-#		total_dist_votes = calculateDistanceVotes(total_dist, total_cells_weight)
-#		total_votes = [prediction_votes[i] + per_burst_votes[i] + total_dist_votes[i] for i in range(len(models))]
-#
-#		res = indexOfSortedValues(total_votes, descending=True)
-#		total_results[res.index(Y.index(directory))] += 1
-#
-#t_sum = sum(total_results)
-#print total_results, ("%.2f" % (float(total_results[0])/sum(total_results)))
+	#test = [1435.3301014052481, 4070.587089106435, 2047.7744626789347, 100.12492197250393, 674.202677241792, 3816.736957140222, 85.21296849658508, 908.0397843707069, 4901.56232746254]
+	#print indexOfSortedValues(test)
+	#print calculateDistanceVotes(test, 1.0)
