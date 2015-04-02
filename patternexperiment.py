@@ -20,13 +20,17 @@ def calculateDistanceVotes(vector, w):
 	l = float(len(vector))
 	votes = []
 	for i in range(len(vector)):
-		try:
-			r = G.index(i)
-		except:
-			r = G.index(i-1)
+		j = i
+		while True:
+			try:
+				r = G.index(j)
+				break
+			except:
+				j -= 1
+
 		v = 2*w - 2*r/l*w
-		if v == 2.0:
-			v = 4.0*w
+		#if v == 2.0:
+		#	v = 4.0*w
 		votes.append(v)
 	#votes = [2*w - 2*x/l*w for x in G]
 	return votes
@@ -62,7 +66,7 @@ def closedWorldExperiment(n):
 			total_dist = []
 			for c in clf:
 				try:
-					prediction_votes.append(c.predict(fp))
+					prediction_votes.append(c.predict(fp, site))
 					per_burst_dist.append(c.perBurstDistance(fp))
 					total_dist.append(c.totalDistance(fp))
 				except:
@@ -74,12 +78,20 @@ def closedWorldExperiment(n):
 			total_votes = [prediction_votes[i] + per_burst_votes[i] + total_dist_votes[i] for i in range(len(clf))]
 			res = indexOfSortedValues(total_votes, descending=True)
 
-			if res.index(monitored_sites.index(site)) == 0:
-				print "Correct\t\t", max(total_votes)
-			else:
-				print "Incorrect\t", max(total_votes)
-			per_site_results[site][res.index(monitored_sites.index(site))] += 1
-			total_results[res.index(monitored_sites.index(site))] += 1
+			#print site, prediction_votes
+
+			#if res.index(monitored_sites.index(site)) == 0:
+			#	print "Correct\t\t", max(total_votes)
+			#else:
+			#	print "Incorrect\t", max(total_votes)
+			j = monitored_sites.index(site)
+			while True:
+				try:
+					per_site_results[site][res.index(j)] += 1
+					total_results[res.index(j)] += 1
+					break
+				except:
+					j -= 1
 
 	print per_site_results
 	print "Total results: ", total_results, ("%.2f" % (float(total_results[0])/sum(total_results)) )

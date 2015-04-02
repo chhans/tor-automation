@@ -120,36 +120,4 @@ def calculateDistanceVotes(vector, w):
 	votes = [2*w - 2*x/l*w for x in G]
 	return votes
 
-#Y = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"]
-#total_results = [0]*len(Y)
-#iterations = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
-#
-#for pattern in iterations:
-#	# Create class models with training data
-#	models = [Classifier(x) for x in Y]
-#	for i in [pattern[0], pattern[1]]:
-#		for directory in Y:
-#			fp = makeFingerprint("PatternDumps/%s/%s.cap" % (directory, i))
-#			models[Y.index(directory)].train(fp)
-#
-#	#Predictions
-#	for directory in Y:
-#		fp = makeFingerprint("PatternDumps/%s/%s.cap" % (directory, pattern[2]))
-#		prediction_votes = []
-#		per_burst_dist = []
-#		total_dist = []
-#		for m in models:
-#			prediction_votes.append(m.predict(fp))
-#			per_burst_dist.append(m.perBurstDistance(fp))
-#			total_dist.append(m.totalDistance(fp))
-#
-#		per_burst_votes = calculateDistanceVotes(per_burst_dist, per_burst_weight)
-#		total_dist_votes = calculateDistanceVotes(total_dist, total_cells_weight)
-#		total_votes = [prediction_votes[i] + per_burst_votes[i] + total_dist_votes[i] for i in range(len(models))]
-#
-#		print ["%.2f" % x for x in total_votes]
-#		res = indexOfSortedValues(total_votes, descending=True)
-#		total_results[res.index(Y.index(directory))] += 1
-#
-#t_sum = sum(total_results)
-#print total_results, ("%.2f" % (float(total_results[0])/sum(total_results)))
+makeFingerprint("PatternDumps/vimeo.com/5.cap")

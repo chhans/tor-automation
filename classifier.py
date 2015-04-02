@@ -47,76 +47,92 @@ class Classifier:
 		# Total number of cells
 		self.trainTotalCells(metrics[i_d], metrics[i_u])
 
-	def IBTVote(self, ibt):
+	def IBTVote(self, ibt, p):
 		std = np.std(self.inter_burst_times)
 		mean = np.mean(self.inter_burst_times)
 
 		dist = abs(ibt - mean)
-		if std > mean/3:
-			return 0.0
-		elif dist > 2*mean:
-			return -1.0
-		elif dist == 0 and std == 0:
-			return 4.0 # Perfect score
-		else:
-			v = (1-dist)/1
-			return v if v >= -0.9 else -0.9
+		perfect_match = dist == 0 and std == 0
+		limit = 4.0
 
-	def numBurstsVote(self, b):
+		if perfect_match:
+			print "IBT PF", p
+			return 4.0
+		elif dist <= limit:
+			return 1.0
+		else:
+			return -1.0
+
+		#if std > mean/3:
+		#	return 0.0
+		#elif dist > 2*mean:
+		#	return -1.0
+		#elif dist == 0 and std == 0:
+		#	return 4.0 # Perfect score
+		#else:
+		#	v = (1-dist)/1
+		#	return v if v >= -0.9 else -0.9
+
+	def numBurstsVote(self, b, p):
 		std = np.std(self.num_burst)
 		mean = np.mean(self.num_burst)
 
 		dist = abs(b - mean)
-		if std > mean/3:
-			return 0.0
-		elif dist > mean/2:
-			return -1.0
-		else:
-			v = (5-dist)/5
-			return v if v >= -0.9 else -0.9
+		perfect_match = dist <= 0.5 and std <= 0.5
+		limit = 4.0
 
-	def perBurstRatioVote(self, ratio):
+		if perfect_match:
+			print "Numburst PF", p
+			return 4.0
+		elif dist <= limit:
+			return 1.0
+		else:
+			return -1.0
+		
+		#if std > mean/3:
+		#	return 0.0
+		#elif dist > mean/2:
+		#	return -1.0
+		#else:
+		#	v = (5-dist)/5
+		#	return v if v >= -0.9 else -0.9
+
+	def perBurstRatioVote(self, ratio, p):
 		ratios = self.per_burst_dn/self.per_burst_up
-		#std = np.std(ratios)
 		mean = np.mean(ratios)
 
 		dist = abs(ratio - mean)
-		if dist > mean/3.5: # TODO: Higher? All models improved except vimeo
-			return -1.0
-		else:
-			v = (1-dist)
-			return v
+		limit = mean/3.5
 
-	def totalRatioVote(self, ratio):
+		if dist <= limit:
+			return 1.0
+		else:
+			return -1.0
+
+		#if dist > mean/3.5: # TODO: Higher? All models improved except vimeo
+		#	if p:
+		#		print self.label, "Negative ratio score", p
+		#	return -1.0
+		#else:
+		#	v = (1-dist)
+		#	return v
+
+	def totalRatioVote(self, ratio, p):
 		ratios = self.tot_cells_dn/self.tot_cells_up
 		mean = np.mean(ratios)
 
 		dist = abs(ratio - mean)
-		if dist > mean/2:
-			return -1.0
-		else:
-			v = (1-dist)
-			return v
+		limit = mean/1.8
 
-#	def perBurstVote(self, dn, up):
-#		mean_dn = np.mean(self.per_burst_dn)
-#		mean_up = np.mean(self.per_burst_up)
-#		mean_dist = np.mean(self.per_burst_dist)
-#		std = np.std(self.per_burst_dist)
-#
-#
-#		dist = self.euclidianDist(dn, up, mean_dn, mean_up)
-#
-#		#print self.label, mean_dn, mean_up, dist
-#		return 5000-dist
-#
-#	def totalCellsVote(self, dn, up):
-#		mean_dn = np.mean(self.tot_cells_dn)
-#		mean_up = np.mean(self.tot_cells_up)
-#
-#		dist = self.euclidianDist(dn, up, mean_dn, mean_up)
-#
-#		return 5000-dist
+		if dist <= limit:
+			return 1.0
+		else:
+			return -1.0
+		#if dist > mean/2:
+		#	return -1.0
+		#else:
+		#	v = (1-dist)
+		#	return v
 
 	def perBurstDistance(self, metrics):
 		mean_dn = np.mean(self.per_burst_dn)
@@ -134,13 +150,14 @@ class Classifier:
 
 	# For each metric or metric-pair, calculate a vote in the range [-1, 1] 
 	# depending on how well the supplied metric correlates weighted on the standard deviation of the training metrics
-	def predict(self, metrics):
+	def predict(self, metrics, c):
+		p = c == self.label
 		vote = 0.0
 		# Average inter-burst time
-		vote += self.IBTVote(metrics[i_ibt])
+		vote += self.IBTVote(metrics[i_ibt], p)
 		# Number of bursts
-		vote += self.numBurstsVote(metrics[i_b])
+		vote += self.numBurstsVote(metrics[i_b], p)
 		# Cells per burst ratio
-		vote += self.perBurstRatioVote(metrics[i_pbd]/float(metrics[i_pbu]))
-		vote += self.totalRatioVote(metrics[i_d]/metrics[i_u])
+		vote += self.perBurstRatioVote(metrics[i_pbd]/float(metrics[i_pbu]), p)
+		vote += self.totalRatioVote(metrics[i_d]/metrics[i_u], p)
 		return vote

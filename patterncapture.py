@@ -117,5 +117,5 @@ def captureWebsite(url):
 		removeFile(f_path)
 		raise
 
-for url in urls:
-	captureWebsite(url)
+#for url in urls:
+#	captureWebsite(url)
