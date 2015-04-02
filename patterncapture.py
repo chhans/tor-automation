@@ -7,6 +7,7 @@ import os
 import signal
 import time
 import sys
+import random
 
 sleep_time = 5.0
 browse_time = 120.0 # TODO: Find good value. 2 minutes?
@@ -117,5 +118,17 @@ def captureWebsite(url):
 		removeFile(f_path)
 		raise
 
+def captureRandomlyFromList(number):
+	with open("safelist.csv", "r") as f:
+		sites = ["http://%s" % x.split(",")[1][:-1] for x in f]
+		f.close()
+
+	while number > 0:
+		captureWebsite(sites[random.randint(0,len(sites)-1)])
+		number -= 1
+
+
+
+captureRandomlyFromList(2)
 #for url in urls:
 #	captureWebsite(url)

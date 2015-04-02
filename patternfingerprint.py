@@ -115,3 +115,6 @@ def isOnUplink(payload):
 	except:
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
+
+makeFingerprint("PatternDumps/mercadolivre.com.br/0.cap")
+makeFingerprint("PatternDumps/soundcloud.com/0.cap")
