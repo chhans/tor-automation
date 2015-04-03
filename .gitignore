@@ -1,4 +1,5 @@
 *.pyc
+*.cap
 old_captures/
 captures/
 fingerprints/
