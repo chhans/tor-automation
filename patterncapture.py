@@ -15,7 +15,7 @@ load_timeout = 120.0
 iface = "eth1"
 dump_path = "PatternDumps"
 
-urls = ["http://amazon.co.uk", "http://cbsnews.com", "http://ebay.co.uk", "http://google.com/ncr", "http://nrk.no", "http://vimeo.com", "http://wikipedia.org", "http://yahoo.com", "http://youtube.com"]
+urls = ["http://cbsnews.com", "http://google.com/ncr", "http://nrk.no", "http://vimeo.com", "http://wikipedia.org", "http://youtube.com"]
 
 def startProgress():
 	global progress_x
@@ -127,8 +127,15 @@ def captureRandomlyFromList(number):
 		captureWebsite(sites[random.randint(0,len(sites)-1)])
 		number -= 1
 
+if __name__=="__main__":
 
+	try:
+		n_mon = int(sys.argv[1])
+		n_rand = int(sys.argv[2])
+	except:
+		print "Usage: python %s <number of visits to monitored web sites> <number of visits to random web sites>" % sys.argv[0]
+		sys.exit()
 
-captureRandomlyFromList(2)
-#for url in urls:
-#	captureWebsite(url)
+	for i in range(n_mon):
+		captureWebsite(urls[i % len(urls)])
+	captureRandomlyFromList(n_rand)

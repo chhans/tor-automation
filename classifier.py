@@ -18,6 +18,8 @@ class Classifier:
 		self.per_burst_up = np.array([])
 		self.tot_cells_dn = np.array([])
 		self.tot_cells_up = np.array([])
+		self.tot_distances = np.array([])
+		self.per_burst_distances = np.array([])
 
 
 	def euclidianDist(self, dn_0, up_0, dn_1, up_1):
@@ -29,13 +31,35 @@ class Classifier:
 	def trainNumBursts(self, b):
 		self.num_burst = np.append(self.num_burst, b)
 
+	def trainPerBurstDistance(self):
+		for i in range(len(self.per_burst_dn)-1):
+			u0 = self.per_burst_up[-1]
+			d0 = self.per_burst_dn[-1]
+			u1 = self.per_burst_up[i]
+			d1 = self.per_burst_dn[i]
+			d = self.euclidianDist(d0, u0, d1, u1)
+			self.per_burst_distances = np.append(self.per_burst_distances, d)
+
 	def trainPerBurst(self, dn, up):
 		self.per_burst_dn = np.append(self.per_burst_dn, dn)
 		self.per_burst_up = np.append(self.per_burst_up, up)
+		if len(self.per_burst_dn) > 1:
+			self.trainPerBurstDistance()
+
+	def trainTotalDistance(self):
+		for i in range(len(self.tot_cells_dn)-1):
+			u0 = self.tot_cells_up[-1]
+			d0 = self.tot_cells_dn[-1]
+			u1 = self.tot_cells_up[i]
+			d1 = self.tot_cells_dn[i]
+			d = self.euclidianDist(d0, u0, d1, u1)
+			self.tot_distances = np.append(self.tot_distances, d)
 
 	def trainTotalCells(self, dn, up):
 		self.tot_cells_dn = np.append(self.tot_cells_dn, dn)
 		self.tot_cells_up = np.append(self.tot_cells_up, up)
+		if len(self.tot_cells_dn) > 1:
+			self.trainTotalDistance()
 
 	def train(self, metrics):
 		# Average inter-burst time
@@ -47,7 +71,13 @@ class Classifier:
 		# Total number of cells
 		self.trainTotalCells(metrics[i_d], metrics[i_u])
 
-	def IBTVote(self, ibt, p):
+	def meanTotalDistance(self):
+		return np.mean(self.tot_distances)
+
+	def meanPerBurstDistance(self):
+		return np.mean(self.per_burst_distances)
+
+	def IBTVote(self, ibt):
 		std = np.std(self.inter_burst_times)
 		mean = np.mean(self.inter_burst_times)
 
@@ -56,24 +86,13 @@ class Classifier:
 		limit = 4.0
 
 		if perfect_match:
-			print "IBT PF", p
 			return 4.0
 		elif dist <= limit:
 			return 1.0
 		else:
 			return -1.0
 
-		#if std > mean/3:
-		#	return 0.0
-		#elif dist > 2*mean:
-		#	return -1.0
-		#elif dist == 0 and std == 0:
-		#	return 4.0 # Perfect score
-		#else:
-		#	v = (1-dist)/1
-		#	return v if v >= -0.9 else -0.9
-
-	def numBurstsVote(self, b, p):
+	def numBurstsVote(self, b):
 		std = np.std(self.num_burst)
 		mean = np.mean(self.num_burst)
 
@@ -82,22 +101,13 @@ class Classifier:
 		limit = 2.0
 
 		if perfect_match:
-			print "Numburst PF", p
 			return 4.0
 		elif dist <= limit:
 			return 1.0
 		else:
 			return -1.0
-		
-		#if std > mean/3:
-		#	return 0.0
-		#elif dist > mean/2:
-		#	return -1.0
-		#else:
-		#	v = (5-dist)/5
-		#	return v if v >= -0.9 else -0.9
 
-	def perBurstRatioVote(self, ratio, p):
+	def perBurstRatioVote(self, ratio):
 		ratios = self.per_burst_dn/self.per_burst_up
 		mean = np.mean(ratios)
 
@@ -109,15 +119,7 @@ class Classifier:
 		else:
 			return -1.0
 
-		#if dist > mean/3.5: # TODO: Higher? All models improved except vimeo
-		#	if p:
-		#		print self.label, "Negative ratio score", p
-		#	return -1.0
-		#else:
-		#	v = (1-dist)
-		#	return v
-
-	def totalRatioVote(self, ratio, p):
+	def totalRatioVote(self, ratio):
 		ratios = self.tot_cells_dn/self.tot_cells_up
 		mean = np.mean(ratios)
 
@@ -128,11 +130,6 @@ class Classifier:
 			return 1.0
 		else:
 			return -1.0
-		#if dist > mean/2:
-		#	return -1.0
-		#else:
-		#	v = (1-dist)
-		#	return v
 
 	def perBurstDistance(self, metrics):
 		mean_dn = np.mean(self.per_burst_dn)
@@ -148,16 +145,61 @@ class Classifier:
 		up = metrics[i_u]
 		return self.euclidianDist(dn, up, mean_dn, mean_up)
 
-	# For each metric or metric-pair, calculate a vote in the range [-1, 4] 
-	# depending on how well the supplied metric correlates weighted on the standard deviation of the training metrics
-	def predict(self, metrics, c):
-		p = c == self.label
+	def predict(self, metrics):
 		vote = 0.0
 		# Average inter-burst time
-		vote += self.IBTVote(metrics[i_ibt], p)
+		vote += self.IBTVote(metrics[i_ibt])
 		# Number of bursts
-		vote += self.numBurstsVote(metrics[i_b], p)
+		vote += self.numBurstsVote(metrics[i_b])
 		# Cells per burst ratio
-		vote += self.perBurstRatioVote(metrics[i_pbd]/float(metrics[i_pbu]), p)
-		vote += self.totalRatioVote(metrics[i_d]/metrics[i_u], p)
+		vote += self.perBurstRatioVote(metrics[i_pbd]/float(metrics[i_pbu]))
+		vote += self.totalRatioVote(metrics[i_d]/metrics[i_u])
 		return vote
+
+	def openIBTVote(self, ibt):
+		std = np.std(self.inter_burst_times)
+		mean = np.mean(self.inter_burst_times)
+
+		dist = abs(ibt - mean)
+
+		if dist < std/2.0:
+			return 1
+		else:
+			return 0
+
+	def openNumBurstVote(self, b):
+		std = np.std(self.num_burst)
+		mean = np.mean(self.num_burst)
+
+		dist = abs(b - mean)
+		
+		if dist < std:
+			return 1
+		else:
+			return 0
+
+	def openTotalDistanceVote(self, d, u):
+		std = np.std(self.tot_distances)
+		mean = np.mean(self.tot_distances)
+		
+		distances = np.array([])
+		for i in range(len(self.tot_cells_dn)):
+			d1 = self.tot_cells_dn[i]
+			u1 = self.tot_cells_up[i]
+			distances = np.append(distances, self.euclidianDist(d, u, d1, u1))
+		std2 = np.std(distances)
+		mean2 = np.mean(distances)
+
+		dist = abs(mean - mean2)
+		if dist < std:
+			return 1
+		else:
+			return 0
+
+	def predictOpen(self, metrics):
+		votes = []
+		# Average inter-burst time
+		votes.append(self.openIBTVote(metrics[i_ibt]))
+		#votes.append(self.openNumBurstVote(metrics[i_b]))
+		#votes.append(self.openTotalDistanceVote(metrics[i_d], metrics[i_u]))
+		return votes

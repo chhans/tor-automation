@@ -4,6 +4,7 @@ import re
 import sys
 
 from torCell import TorCell
+from itertools import imap
 
 tls_header = "\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]"
 src_ip = "129.241.208.200"
@@ -115,6 +116,3 @@ def isOnUplink(payload):
 	except:
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
-
-makeFingerprint("PatternDumps/mercadolivre.com.br/0.cap")
-makeFingerprint("PatternDumps/soundcloud.com/0.cap")
