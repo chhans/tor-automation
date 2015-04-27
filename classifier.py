@@ -151,6 +151,8 @@ class Classifier:
 		vote += self.IBTVote(metrics[i_ibt])
 		# Number of bursts
 		vote += self.numBurstsVote(metrics[i_b])
+		if vote == 0:
+			print "WTF!?!?"
 		# Cells per burst ratio
 		vote += self.perBurstRatioVote(metrics[i_pbd]/float(metrics[i_pbu]))
 		vote += self.totalRatioVote(metrics[i_d]/metrics[i_u])

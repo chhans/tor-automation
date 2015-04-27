@@ -215,21 +215,3 @@ if __name__ == "__main__":
 		capturePage(p, page)
 
 	display.stop()
-
-
-#	display = Display(visible=0, size=(800, 600))
-#	display.start()
-#
-#	page_list = createPageList("censoredinchina.csv", 100, False)
-#
-#	# Capture 10 instances of each web page for training data
-#	for i in range(10):
-#		for page in page_list:
-#			capturePage(training_data, page)
-#
-#	page_list = createPageList("biglist.csv", 1000, False)
-#
-#	for page in page_list:
-#		capturePage(experiment_data, page)
-#
-#	display.stop()
