@@ -2,21 +2,16 @@ import pcapy
 import socket
 import re
 import sys
+import os
 
 from torCell import TorCell
-from itertools import imap
 
 tls_header = "\x17\x03[\x00\x01\x02\x03]\x02[\x30\x1a]"
-src_ip = "129.241.208.200"
 burst_tolerance = 2500
 burst_size_limit = 1
-
-# TODO:
-# Tune burst detection threshold (1000 = 1 second)
-# Test if ignoring bursts with few packets improves accuracy (probably SENDMEs etc.)
-# Performance improvements if necessary: 
-	# Filter out noise packets (easier than regexing whole packet payload)
-	# Do calculations on the fly when reading the dump files
+src_ip = "129.241.208.200"
+open_data = "PatternDumps/open/"
+closed_data = "PatternDumps/closed/"
 
 def makeFingerprint(file_path):
 	cells = []
@@ -116,3 +111,41 @@ def isOnUplink(payload):
 	except:
 		print "Unexpected error when deciding direction. Using downlink.", sys.exc_info()[0]
 		return False
+
+if __name__ == "__main__":
+
+	try:
+		src_ip = sys.argv[1]
+		socket.inet_aton(src_ip)
+	except socket.error:
+		print "Error: Invalid IP address"
+		sys.exit()
+	except:
+		print "Usage: python %s <IP address of client>" % sys.argv[0]
+		sys.exit()
+
+	# Create fingerprints from closed world data
+	for (dirpath, dirnames, filenames) in os.walk(closed_data):
+		site = dirpath.split("/")[2]
+		if len(site) > 1:
+			print "Generating fingerprints for %s" % site
+
+		for f in filenames:
+			if not f[-4:] == ".cap":
+				continue
+			path = dirpath+"/"+f
+			makeFingerprint(path)
+
+	# Create fingerprints from open world data
+	for (dirpath, dirnames, filenames) in os.walk(open_data):
+		site = dirpath.split("/")[2]
+		if len(site) > 1:
+			print "Generating fingerprints for %s" % site
+
+		for f in filenames:
+			if not f[-4:] == ".cap":
+				continue
+			path = dirpath+"/"+f
+			makeFingerprint(path)
+
+	print "Successfully generated fingerprints"
