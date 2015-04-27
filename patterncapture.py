@@ -128,14 +128,26 @@ def captureRandomlyFromList(number):
 		number -= 1
 
 if __name__=="__main__":
+	closed_world = False
+	n = 0
 
 	try:
-		n_mon = int(sys.argv[1])
-		n_rand = int(sys.argv[2])
+		model = sys.argv[1]
+		if model == "closed":
+			closed_world = True
+		elif model == "open":
+			closed_world = False
+			n = int(sys.argv[2])
+		else:
+			raise
 	except:
-		print "Usage: python %s <number of visits to monitored web sites> <number of visits to random web sites>" % sys.argv[0]
+		print "Usage: python %s <open/closed> <number of visits (given open world)>" % sys.argv[0]
 		sys.exit()
 
-	for i in range(n_mon):
-		captureWebsite(urls[i % len(urls)])
-	captureRandomlyFromList(n_rand)
+	if closed_world:
+		dump_path += "/closed"
+		for url in urls:
+			captureWebsite(url)
+	else:
+		dump_path += "/open"
+		captureRandomlyFromList(n)
