@@ -1,0 +1,18 @@
+Number of training instances: 1
+Number of experiments: 5
+
+Accuracy:	0.84
+0:		76	0.84
+1:		8	0.09
+2:		4	0.04
+3:		2	0.02
+4:		0	0.00
+5:		0	0.00
+
+Individual site accuracy:
+cbsnews.com: 0.87
+wikipedia.org: 0.53
+youtube.com: 0.93
+google.com: 0.93
+vimeo.com: 1.00
+nrk.no: 0.80

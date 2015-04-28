@@ -98,7 +98,7 @@ class Classifier:
 
 		dist = abs(b - mean)
 		perfect_match = dist <= 0.5 and std <= 0.5
-		limit = 2.0
+		limit = 5
 
 		if perfect_match:
 			return 4.0
@@ -151,8 +151,6 @@ class Classifier:
 		vote += self.IBTVote(metrics[i_ibt])
 		# Number of bursts
 		vote += self.numBurstsVote(metrics[i_b])
-		if vote == 0:
-			print "WTF!?!?"
 		# Cells per burst ratio
 		vote += self.perBurstRatioVote(metrics[i_pbd]/float(metrics[i_pbu]))
 		vote += self.totalRatioVote(metrics[i_d]/metrics[i_u])

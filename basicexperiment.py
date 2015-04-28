@@ -92,47 +92,6 @@ def closedWorldExperiment(n_train, n_exp):
 
 			storeResults(training_set, exp, n_train, correct, len(page_results), total_results, page_results)
 
-#	for [training_set, experiment_set] in experiment_sets:
-#		training_models = {}
-#		page_results = {}
-#		total_results = {}
-#		correct = 0
-#
-#		for page in os.listdir(training_data):
-#			# Create models from training data
-#			key_value = trainModel(training_data+page, training_set)
-#			training_models[key_value[0]] = key_value[1]
-#
-#			# Do experiments with model trained on training_set
-#
-#
-#		t_range = p[:-1]
-#		experiment = p[-1]
-#		for page in os.listdir(training_data):
-#			# Create models from training data
-#			key_value = trainModel(training_data+page, t_range)
-#			training_models[key_value[0]] = key_value[1]
-#
-#			# Do experiments on fingerprints not included in t_range
-#			fp = getFingerprint(training_data+page+"/%d.fp" % experiment)
-#			distances = {}
-#			for (key, value) in training_models.iteritems():
-#				distances[key] = euclidianDistance(fp, value)
-#			sorted_distances = sorted(distances.items(), key=operator.itemgetter(1))
-#			rank = [y[0] for y in sorted_distances].index(page)
-#
-#			if rank in total_results:
-#				total_results[rank] += 1
-#			else:
-#				total_results[rank] = 1
-#
-#			if rank == 0:
-#				correct += 1
-#
-#			page_results[page] = rank
-#
-#		storeResults(n_train, correct, len(page_results), total_results, page_results)
-
 def storeResults(t_set, exp, n_train, correct, number_of_pages, total_results, page_results):
 	with open(results+str(datetime.now()), "w") as r_file:
 		print "Completed experiment. Achieved accuracy of %.2f%%. Detailed results stored in %s." % (100*float(correct)/number_of_pages, r_file.name)

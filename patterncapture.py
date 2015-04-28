@@ -127,6 +127,13 @@ def captureRandomlyFromList(number):
 		captureWebsite(sites[random.randint(0,len(sites)-1)])
 		number -= 1
 
+def openWorldList(n):
+	with open("openlist.csv", "r") as f:
+		sites = ["http://%s" % x.split(",")[1][:-1] for x in f]
+		sites = sites[:n]
+		f.close()
+	return sites
+
 if __name__=="__main__":
 	closed_world = False
 	n = 0
@@ -150,4 +157,6 @@ if __name__=="__main__":
 			captureWebsite(url)
 	else:
 		dump_path += "/open"
-		captureRandomlyFromList(n)
+		urls = openWorldList(n)
+		for url in urls:
+			captureWebsite(url)

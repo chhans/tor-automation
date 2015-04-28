@@ -1,16 +1,21 @@
-import patternfingerprint as fingerprint
 from classifier import Classifier
 from itertools import combinations
+from datetime import datetime
 import sys
 import os
+import exceptions as ex
+import numpy as np
 
-dump_path = "PatternDumps"
-#monitored_sites = ["amazon.co.uk", "cbsnews.com", "ebay.co.uk", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"] # 67%
-#monitored_sites = ["cbsnews.com", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "yahoo.com", "youtube.com"] # 83%
-monitored_sites = ["cbsnews.com", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "youtube.com"] # 94%
 
-per_burst_weight = 1.0
-total_cells_weight = 1.0
+open_path = "PatternDumps/open"
+closed_path = "PatternDumps/closed"
+monitored_sites = ["cbsnews.com", "google.com", "nrk.no", "vimeo.com", "wikipedia.org", "youtube.com"]
+
+per_burst_weight = 1
+total_cells_weight = 1.1
+
+diff_threshold = 1.5 # Higher threshold implies lower true and false positive rate
+max_threshold = 7
 
 def indexOfSortedValues(l, descending=False):
 	sort = sorted(l, reverse=descending)
@@ -52,112 +57,225 @@ def matchAgainstClassifiers(clf, fp):
 		td.append(c.totalDistance(fp))
 	pbv = calculateDistanceVotes(pbd, per_burst_weight)
 	tdv = calculateDistanceVotes(td, total_cells_weight)
-	#pbv = calc2(pbd)
-	#tdv = calc2(td)
 	total = [pred[i] + pbv[i] + tdv[i] for i in range(len(clf))]
 	return total
+
+def getFingerprint(f_path):
+	with open(f_path, "r") as f:
+		fp = [int(dimension) for dimension in f.readlines()]
+		f.close()
+	return fp
 
 def createClassifiers(file_list):
 	clf = [Classifier(site) for site in monitored_sites]
 	for i in file_list:
 		for k, site in enumerate(monitored_sites):
-			fp = fingerprint.makeFingerprint("%s/%s/%s.cap" % (dump_path, site, i))
+			f_path = "%s/%s/%i.fp" % (closed_path, site, i)
+			fp = getFingerprint(f_path)
 			clf[k].train(fp)
 	return clf
 
+def createExperimentSets(n_train, n_exp):
+	tot = n_train + n_exp
+	tot_r = range(tot)
 
-def closedWorldExperiment(n):
-	training_sets = createTrainingSets(n)
-	total_results = [0]*len(monitored_sites)
-	per_site_results = {key: [0]*len(monitored_sites) for key in monitored_sites}
+	combo_train = list(combinations(tot_r, n_train))
+	exp_sets = []
+	if n_train == 1:
+		for t in combo_train:
+			exp_sets.append([[y for y in t], [x for x in tot_r if x not in t]])
+			tot_r = [x for x in tot_r if x not in t]
+	else:
+		for t in combo_train:
+			exp_sets.append([[y for y in t], [x for x in tot_r if x not in t]])
 
-	for permutation in training_sets:
+	return exp_sets
+
+def closedWorldExperiment(n_train, n_exp):
+
+	experiment_sets = createExperimentSets(n_train, n_exp)
+	total_results = dict.fromkeys(range(0, 6), 0)
+	site_results = dict.fromkeys(monitored_sites, 0)
+	total = 0
+
+	for e_set in experiment_sets:
+		training_set = e_set[0]
 		# Create classifiers with training data
-		clf = createClassifiers(permutation[:-1])
+		clf = createClassifiers(training_set)
+		for exp in e_set[1]:
 
-		# Predictions
-		for site in monitored_sites:
-			fp = fingerprint.makeFingerprint("%s/%s/%s.cap" % (dump_path, site, permutation[-1]))
-			votes = matchAgainstClassifiers(clf, fp)
-			res = indexOfSortedValues(votes, descending=True)
+			for i, site in enumerate(monitored_sites):
+				f_path = "%s/%s/%d.fp" % (closed_path, site, exp)
+				fp = getFingerprint(f_path)
+				votes = matchAgainstClassifiers(clf, fp)
+				res = indexOfSortedValues(votes, descending=True)
 
-			j = monitored_sites.index(site)
-			while True:
-				try:
-					per_site_results[site][res.index(j)] += 1
-					total_results[res.index(j)] += 1
-					break
-				except:
-					j -= 1
+				j = 0
+				while True:
+					try:
+						rank = res.index(i-j)
+						break
+					except:
+						j += 1
 
-	print per_site_results
-	print "Total results: ", total_results, ("%.2f" % (float(total_results[0])/sum(total_results)) )
 
-def testClassifier(c, fp):
-	prediction = c.predict(fp)
-	if prediction < 0.0:
+				total += 1
+				total_results[rank] += 1
+				if rank == 0:
+					site_results[site] += 1
+
+	storeClosedWorldResult(n_train, n_exp, total, total_results, site_results)
+	# TODO: Store result
+#	print "Number of training instances: %d" % n_train
+#	print "Accuracy:\t%.2f" % (float(total_results[0])/total)
+#	for site in site_results:
+#		print "Accuracy for site %s: %.2f" % (site, float(site_results[site])/(total/len(monitored_sites)))
+#	for guesses in total_results:
+#		print "%d:\t\t%d" % (guesses, total_results[guesses])
+#	print total_results
+#	return (float(total_results[0])/total)
+
+def openWorldFileList(train_range):
+	fp_list = []
+
+	for (dirpath, dirnames, filenames) in os.walk(closed_path):
+		for f in filenames:
+			if f[-3:] == ".fp" and not int(f[-4]) in train_range:
+				fp_list.append(dirpath+"/"+f)
+
+	for (dirpath, dirnames, filenames) in os.walk(open_path):
+		for f in filenames:
+			if f[-3:] == ".fp":
+				fp_list.append(dirpath+"/"+f)
+
+	return fp_list
+
+# Returns True if votes imply an open world hit
+def openWorldThreshold(votes):
+	if max(votes) > max_threshold and (max(votes)-sorted(votes)[-2]) > diff_threshold:
+		return True
+	else:
 		return False
-	total_dist = c.totalDistance(fp)
-	if total_dist > c.meanTotalDistance():
+
+# Returns true if the supplied fingerprint feature vector is predicted to belong to one of the marked sites
+def openWorldPrediction(marked, feature_vector, clf):
+	votes = matchAgainstClassifiers(clf, feature_vector)
+	res = indexOfSortedValues(votes, descending=True)
+	guessed_site = monitored_sites[res[0]]
+
+	# The site is guessed to be one of the marked ones
+	if guessed_site in marked and openWorldThreshold(votes):
+		return True
+	else:
 		return False
-	per_burst_dist = c.perBurstDistance(fp)
-	if per_burst_dist > c.meanPerBurstDistance():
-		return False
-	return True
 
-def openWorldFileList(site_path, monitored, n_train):
-	files = os.listdir(site_path)
-	fl = []
-	for f in files:
-		if not f[-3:] == "cap":
-			continue
-		if monitored and int(f[:-4]) < n_train-1:
-			continue
-		fl.append(f)
-	return fl
+def openWorldExperiment(n_train, n_classifier, marked):
 
-def openWorldExperiment(n_train):
-	# Create classifiers with training data
-	clf = createClassifiers(range(n_train))
-
-	false_positives = 0
 	true_positives = 0
-	tot_p = 0
-	tot_n = 0
+	false_positives = 0
+	false_negatives = 0
+	true_negatives = 0
 
-	sites = os.listdir(dump_path)
-	for site in sites:
-		monitored = site in monitored_sites
-		site_path = "%s/%s" % (dump_path, site)
-		caps = openWorldFileList(site_path, monitored, n_train)
-		for cap in caps:
-			fp = fingerprint.makeFingerprint("%s/%s" % (site_path, cap))
-			votes = matchAgainstClassifiers(clf, fp)
-			hit = max(votes) >= 10 and (max(votes)-sorted(votes)[-2]) > 2.0
-			if monitored:
-				tot_p += 1
-				if hit:
+	training_sets = [x[0] for x in createExperimentSets(n_train, n_classifier)]
+	for training_range in training_sets:
+		# Create classifiers with training data, use remaining feature vectors as experiments
+		clf = createClassifiers(training_range)
+		fv_paths = openWorldFileList(training_range)
+
+		for f_path in fv_paths:
+			feature_vector = getFingerprint(f_path)
+			actual_site = f_path.split("/")[-2]
+
+			hit = openWorldPrediction(marked, feature_vector, clf)
+
+			if hit:
+				if actual_site in marked:
 					true_positives += 1
-			else:
-				tot_n += 1
-				if hit:
+				else:
 					false_positives += 1
+			else:
+				if actual_site in marked:
+					false_negatives += 1
+				else:
+					true_negatives += 1
 
-	#print "Number of tests:", tot_p+tot_n
-	print "Hit rate:", true_positives+false_positives,"/",tot_p+tot_n
-	print "False positive rate:", 100*(float(false_positives)/tot_n), "%"
-	print "True positives:", 100*(float(true_positives)/tot_p), "%"
-	print "False positives:", 100*(float(false_positives)/(tot_p+tot_n)), "%"
+	actual_positives = true_positives + false_negatives
+	actual_negatives = false_positives + true_negatives
+	total_exp = actual_positives + actual_negatives
+
+	hit_rate = float(true_positives+true_negatives)/total_exp
+	true_positives = (float(true_positives)/actual_positives)
+	false_positives = (float(false_positives)/total_exp)
+
+	storeOpenWorldResult(hit_rate, n_train, total_exp, marked, true_positives, false_positives)
+
+def storeClosedWorldResult(n_train, n_exp, total, total_results, site_results):
+	with open("PatternResults/closed/%s" % (str(datetime.now())), "w") as r_file:
+		print "Completed experiment. Achieved accuracy of %.2f%%. Detailed results stored in %s." % (100*(float(total_results[0]))/total, r_file.name)
+		r_file.write("Number of training instances: %d\n" % n_train)
+		r_file.write("Number of experiments: %d\n\n" % n_exp)
+		r_file.write("Accuracy:\t%.2f\n" % (float(total_results[0])/total))
+		for guesses in total_results:
+			r_file.write("%d:\t\t%d\t%.2f\n" % (guesses, total_results[guesses], float(total_results[guesses])/total))
+		r_file.write("\nIndividual site accuracy:\n")
+		for site in site_results:
+			r_file.write("%s: %.2f\n" % (site, float(site_results[site])/(total/len(monitored_sites))))
+
+		r_file.close()
+
+def storeOpenWorldResult(hit_rate, n_train, total_exp, marked, true_positives, false_positives):
+	with open("PatternResults/open/%s" % (str(datetime.now())), "w") as r_file:
+		print "Completed experiment. Achieved a true positive rate of %.2f%% and a false positive rate of %.2f%%. Detailed results stored in %s." % (100*true_positives, 100*false_positives, r_file.name)
+		r_file.write("Number of training instances: %d\n" % n_train)
+		r_file.write("Number of experiments: %d\n" % total_exp)
+		r_file.write("Marked sites: ")
+		for site in marked:
+			r_file.write(site+" ")
+		r_file.write("\n\nTotal hit rate: %.2f\n" % hit_rate)
+		r_file.write("True positive rate: %.2f\n" % true_positives)
+		r_file.write("False positive rate: %.2f" % false_positives)
 
 if __name__=="__main__":
 
 	try:
-		n_train = int(sys.argv[1]) + 1
+		model = sys.argv[1]
+		if model not in ["closed", "open"]:
+			raise
 	except:
-		print "Usage: python %s <number of training instances>" % sys.argv[0]
+		print "Error: first argument must be either 'open' or 'closed'"
+		print "Usage: python %s <closed/open> <number of training instances> <number of experiment instances> <marked sites (if open world)>" % sys.argv[0]
 		sys.exit()
 
-	closedWorldExperiment(n_train)
-	per_burst_weight = 2.0
-	total_cells_weight = 2.0
-	openWorldExperiment(n_train)
+	if model == "closed":
+		try:
+			n_train = int(sys.argv[2])
+			n_exp = int(sys.argv[3])
+		except:
+			print "Error: second and third argument must be the number of training instances and experiments respectively"
+			print "Usage: python %s <closed/open> <number of training instances> <number of experiment instances> <marked sites (if open world)>" % sys.argv[0]
+			sys.exit()
+
+		closedWorldExperiment(n_train, n_exp)
+	elif model == "open":
+		try:
+			n_train = int(sys.argv[2])
+			n_exp = int(sys.argv[3])
+		except:
+			print "Error: second and third argument must be the number of training instances and experiments respectively"
+			print "Usage: python %s <closed/open> <number of training instances> <number of experiment instances> <marked sites (if open world)>" % sys.argv[0]
+			sys.exit()
+
+		marked = []
+		i = 4
+		while True:
+			try:
+				marked_site = sys.argv[i]
+				marked.append(marked_site)
+				i += 1
+			except:
+				break
+		for site in marked:
+			if site not in monitored_sites:
+				print "Error: site %s is not part of classifier and can thus not be used as a monitored site" % site
+				sys.exit()
+		openWorldExperiment(n_train, n_exp, marked)
