@@ -1,0 +1,7 @@
+Number of training instances: 5
+Number of experiments: 222
+Marked sites: cbsnews.com vimeo.com youtube.com 
+
+Total hit rate: 0.93
+True positive rate: 0.94
+False positive rate: 0.07

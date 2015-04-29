@@ -82,12 +82,25 @@ if __name__ == "__main__":
 
 	# Create fingerprints from training data
 	for (dirpath, dirnames, filenames) in os.walk(training_data):
+		site = dirpath.split("/")[2]
+		if len(site) > 1:
+			print "Generating fingerprints for %s" % site
+
 		for f in filenames:
 			if not f[-4:] == ".cap":
 				continue
 			path = dirpath+"/"+f
 			makeFingerprint(path)
 
-	# TODO: Create fingerprints from experiment data
+	for (dirpath, dirnames, filenames) in os.walk(experiment_data):
+		site = dirpath.split("/")[2]
+		if len(site) > 1:
+			print "Generating fingerprints for %s" % site
+
+		for f in filenames:
+			if not f[-4:] == ".cap":
+				continue
+			path = dirpath+"/"+f
+			makeFingerprint(path)
 
 	print "Successfully generated fingerprints"

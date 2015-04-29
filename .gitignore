@@ -1,7 +1,2 @@
 *.pyc
 *.cap
-old_captures/
-captures/
-fingerprints/
-log.dat
-notes

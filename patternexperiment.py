@@ -3,9 +3,6 @@ from itertools import combinations
 from datetime import datetime
 import sys
 import os
-import exceptions as ex
-import numpy as np
-
 
 open_path = "PatternDumps/open"
 closed_path = "PatternDumps/closed"
@@ -16,6 +13,10 @@ total_cells_weight = 1.1
 
 diff_threshold = 1.5 # Higher threshold implies lower true and false positive rate
 max_threshold = 7
+
+def mkdir(dir):
+	if not os.path.exists(dir):
+		os.makedirs(dir)
 
 def indexOfSortedValues(l, descending=False):
 	sort = sorted(l, reverse=descending)
@@ -125,15 +126,6 @@ def closedWorldExperiment(n_train, n_exp):
 					site_results[site] += 1
 
 	storeClosedWorldResult(n_train, n_exp, total, total_results, site_results)
-	# TODO: Store result
-#	print "Number of training instances: %d" % n_train
-#	print "Accuracy:\t%.2f" % (float(total_results[0])/total)
-#	for site in site_results:
-#		print "Accuracy for site %s: %.2f" % (site, float(site_results[site])/(total/len(monitored_sites)))
-#	for guesses in total_results:
-#		print "%d:\t\t%d" % (guesses, total_results[guesses])
-#	print total_results
-#	return (float(total_results[0])/total)
 
 def openWorldFileList(train_range):
 	fp_list = []
@@ -210,10 +202,11 @@ def openWorldExperiment(n_train, n_classifier, marked):
 	storeOpenWorldResult(hit_rate, n_train, total_exp, marked, true_positives, false_positives)
 
 def storeClosedWorldResult(n_train, n_exp, total, total_results, site_results):
+
 	with open("PatternResults/closed/%s" % (str(datetime.now())), "w") as r_file:
 		print "Completed experiment. Achieved accuracy of %.2f%%. Detailed results stored in %s." % (100*(float(total_results[0]))/total, r_file.name)
 		r_file.write("Number of training instances: %d\n" % n_train)
-		r_file.write("Number of experiments: %d\n\n" % n_exp)
+		r_file.write("Number of predictions: %d\n\n" % total)
 		r_file.write("Accuracy:\t%.2f\n" % (float(total_results[0])/total))
 		for guesses in total_results:
 			r_file.write("%d:\t\t%d\t%.2f\n" % (guesses, total_results[guesses], float(total_results[guesses])/total))
@@ -224,7 +217,13 @@ def storeClosedWorldResult(n_train, n_exp, total, total_results, site_results):
 		r_file.close()
 
 def storeOpenWorldResult(hit_rate, n_train, total_exp, marked, true_positives, false_positives):
-	with open("PatternResults/open/%s" % (str(datetime.now())), "w") as r_file:
+
+	first_dir = "PatternResults/open/%s_training_instances" % n_train
+	mkdir(first_dir)
+	second_dir = "%s/%d_marked_sites" % (first_dir, len(marked))
+	mkdir(second_dir)
+
+	with open("%s/%s" % (second_dir, marked), "w") as r_file:
 		print "Completed experiment. Achieved a true positive rate of %.2f%% and a false positive rate of %.2f%%. Detailed results stored in %s." % (100*true_positives, 100*false_positives, r_file.name)
 		r_file.write("Number of training instances: %d\n" % n_train)
 		r_file.write("Number of experiments: %d\n" % total_exp)
@@ -274,6 +273,10 @@ if __name__=="__main__":
 				i += 1
 			except:
 				break
+		if len(marked) == 0:
+			print "Error: no marked sites supplied."
+			print "Usage: python %s <closed/open> <number of training instances> <number of experiment instances> <marked sites (if open world)>" % sys.argv[0]
+			sys.exit()
 		for site in marked:
 			if site not in monitored_sites:
 				print "Error: site %s is not part of classifier and can thus not be used as a monitored site" % site

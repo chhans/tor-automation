@@ -1,5 +1,4 @@
 # For the profile to function, make sure Tor is running on the correct port.
-# For minimum noise, javascript is disabled.
 from selenium import webdriver
 
 js = True
