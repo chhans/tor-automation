@@ -15,7 +15,7 @@ load_timeout = 120.0
 iface = "eth1"
 dump_path = "PatternDumps"
 
-urls = ["http://cbsnews.com", "http://google.com/ncr", "http://nrk.no", "http://vimeo.com", "http://wikipedia.org", "http://youtube.com"]
+urls = ["http://cbsnews.com", "http://google.com", "http://nrk.no", "http://vimeo.com", "http://wikipedia.org", "http://youtube.com"]
 
 def startProgress():
 	global progress_x
