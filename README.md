@@ -28,9 +28,11 @@ The scripts are made to run on Ubuntu with Python 2.7, Tor version 0.2.5.10 and 
 #### Examples
 
 *capture.py alexa.csv 1000 eth0 1*
+
 Capture page loads for the *1000* first pages listed in *alexa.csv* on interface *eth0* and stores it in folder for *training data* (./Dumps/training/&lt;url&gt;/i.cap).
 
 *capture.py manual eth0 1 google.com youtube.com*
+
 Capture page loads for the sites *google.com* and *youtube.com* on interface *eth0* and stores it in folder for *training data*.
 
 ## Generate fingerprints for page loads
@@ -69,9 +71,11 @@ The number of fingerprints stored in each web page folder should be equal to the
 #### Examples
 
 *patterncapture.py closed*
+
 Opens a browser window for each web site in the specified urls array (http://cbsnews.com, http://google.com, http://nrk.no, http://vimeo.com, http://wikipedia.org, http://youtube.com), keeping the browser window for each site open for 2 minutes. The captured traffic is stored in ./PatternDumps/closed/&lt;url&gt;/i.cap.
 
 *patterncapture.py open 10*
+
 Does the same for the 10 first sites in openlist.csv and stores the captured traffic in ./PatternDumps/open/&lt;url&gt;/i.cap.
 
 ## Generate fingerprints for sites browsed
@@ -99,7 +103,9 @@ In the source code of pcapy (version 0.10.2 in my case), edit the following line
 ### Examples
 
 *patterexperiment.py closed 4 2*
+
 For all combinations of 4 training instances out of 6 (4+2) fingerprints, train a classifier with 4 feature vectors/fingerprints for each site and do predictions on the remaining 2. Stores the result in ./PatternResults/closed/
 
 *patternexperiment.py open 4 2 cbsnews.com vimeo.com*
+
 For all combinations of 4 training instances out of 6 (4+2) fingerprints, train a classifier with 4 feature vectors/fingerprints for each site included in (http://cbsnews.com, http://google.com, http://nrk.no, http://vimeo.com, http://wikipedia.org, http://youtube.com). Do predictions on all the remaining fingerprints in both ./PatternDumps/closed/ and ./PatternDumps/open/
