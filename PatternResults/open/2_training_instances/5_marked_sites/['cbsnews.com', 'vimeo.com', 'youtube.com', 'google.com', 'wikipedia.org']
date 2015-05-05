@@ -1,0 +1,5 @@
+Number of training instances: 2
+Marked sites: cbsnews.com vimeo.com youtube.com google.com wikipedia.org 
+
+TP	FP	TN	FN
+241	173	352	59

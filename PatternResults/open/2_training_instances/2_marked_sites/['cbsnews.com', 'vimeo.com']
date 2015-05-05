@@ -1,7 +1,5 @@
 Number of training instances: 2
-Number of experiments: 825
 Marked sites: cbsnews.com vimeo.com 
 
-Total hit rate: 0.95
-True positive rate: 0.84
-False positive rate: 0.03
+TP	FP	TN	FN
+101	22	683	19

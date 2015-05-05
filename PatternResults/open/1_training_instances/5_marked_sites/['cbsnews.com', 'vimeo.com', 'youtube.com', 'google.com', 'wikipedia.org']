@@ -1,0 +1,5 @@
+Number of training instances: 1
+Marked sites: cbsnews.com vimeo.com youtube.com google.com wikipedia.org 
+
+TP	FP	TN	FN
+112	78	138	38

@@ -1,0 +1,5 @@
+Number of training instances: 2
+Marked sites: cbsnews.com vimeo.com youtube.com google.com wikipedia.org nrk.no 
+
+TP	FP	TN	FN
+291	334	131	69

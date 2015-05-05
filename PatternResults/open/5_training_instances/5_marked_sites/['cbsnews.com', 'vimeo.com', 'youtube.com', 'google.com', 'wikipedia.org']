@@ -1,0 +1,5 @@
+Number of training instances: 5
+Marked sites: cbsnews.com vimeo.com youtube.com google.com wikipedia.org 
+
+TP	FP	TN	FN
+28	57	135	2

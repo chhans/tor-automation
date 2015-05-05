@@ -191,15 +191,7 @@ def openWorldExperiment(n_train, n_classifier, marked):
 				else:
 					true_negatives += 1
 
-	actual_positives = true_positives + false_negatives
-	actual_negatives = false_positives + true_negatives
-	total_exp = actual_positives + actual_negatives
-
-	hit_rate = float(true_positives+true_negatives)/total_exp
-	true_positives = (float(true_positives)/actual_positives)
-	false_positives = (float(false_positives)/total_exp)
-
-	storeOpenWorldResult(hit_rate, n_train, total_exp, marked, true_positives, false_positives)
+	storeOpenWorldResult(n_train, marked, true_positives, false_positives, false_negatives, true_negatives)
 
 def storeClosedWorldResult(n_train, n_exp, total, total_results, site_results):
 
@@ -216,23 +208,22 @@ def storeClosedWorldResult(n_train, n_exp, total, total_results, site_results):
 
 		r_file.close()
 
-def storeOpenWorldResult(hit_rate, n_train, total_exp, marked, true_positives, false_positives):
+def storeOpenWorldResult(n_train, marked, true_positives, false_positives, false_negatives, true_negatives):
 
 	first_dir = "PatternResults/open/%s_training_instances" % n_train
 	mkdir(first_dir)
 	second_dir = "%s/%d_marked_sites" % (first_dir, len(marked))
 	mkdir(second_dir)
 
+	acc = float(true_positives+true_negatives)/(true_positives+false_negatives+false_positives+true_negatives)
+
 	with open("%s/%s" % (second_dir, marked), "w") as r_file:
-		print "Completed experiment. Achieved a true positive rate of %.2f%% and a false positive rate of %.2f%%. Detailed results stored in %s." % (100*true_positives, 100*false_positives, r_file.name)
+		print "Completed experiment. Achieved an accuracy of %.2f%%. Detailed results stored in %s." % (100*acc, r_file.name)
 		r_file.write("Number of training instances: %d\n" % n_train)
-		r_file.write("Number of experiments: %d\n" % total_exp)
 		r_file.write("Marked sites: ")
 		for site in marked:
 			r_file.write(site+" ")
-		r_file.write("\n\nTotal hit rate: %.2f\n" % hit_rate)
-		r_file.write("True positive rate: %.2f\n" % true_positives)
-		r_file.write("False positive rate: %.2f" % false_positives)
+		r_file.write("\n\nTP\tFP\tTN\tFN\n%d\t%d\t%d\t%d" % (true_positives, false_positives, true_negatives, false_negatives))
 
 if __name__=="__main__":
 
