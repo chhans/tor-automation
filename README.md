@@ -22,12 +22,19 @@ The scripts are made to run on Ubuntu with Python 2.7, Tor version 0.2.5.10 and 
 
 1. Edit torProfile.py to match setup if your loopback interface or Tor port differs from the default 127.0.0.1:9050.
 2. Run capture.py with the following arguments:
-*capture.py &lt;web page list&gt; &lt;number of pages from list to visit&gt; &lt;network interface&gt; &lt;training data (0/1)&gt;* OR
-*capture.py manual &lt;network interface&gt; &lt;training data (0/1)&gt &lt;web page(s)&gt;*
+```sh
+capture.py &lt;web page list&gt; &lt;number of pages from list to visit&gt; &lt;network interface&gt; &lt;training data (0/1)&gt;
+``` 
+OR
+```sh
+capture.py manual &lt;network interface&gt; &lt;training data (0/1)&gt &lt;web page(s)&gt;
+```
 
 #### Examples
 
-*capture.py alexa.csv 1000 eth0 1*
+```sh
+python capture.py alexa.csv 1000 eth0 1
+```
 
 Capture page loads for the *1000* first pages listed in *alexa.csv* on interface *eth0* and stores it in folder for *training data* (./Dumps/training/&lt;url&gt;/i.cap).
 
