@@ -27,7 +27,7 @@ capture.py &lt;web page list&gt; &lt;number of pages from list to visit&gt; &lt;
 ``` 
 OR
 ```sh
-capture.py manual &lt;network interface&gt; &lt;training data (0/1)&gt &lt;web page(s)&gt;
+capture.py manual <network interface&gt; &lt;training data (0/1)&gt &lt;web page(s)&gt;
 ```
 
 #### Examples
