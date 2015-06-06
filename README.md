@@ -136,3 +136,7 @@ python patternexperiment.py open 4 2 cbsnews.com vimeo.com
 ```
 
 For all combinations of 4 training instances out of 6 (4+2) fingerprints, train a classifier with 4 feature vectors/fingerprints for each site included in (http://cbsnews.com, http://google.com, http://nrk.no, http://vimeo.com, http://wikipedia.org, http://youtube.com). Do predictions on all the remaining fingerprints in both ./PatternDumps/closed/ and ./PatternDumps/open/
+
+## Licensing
+
+All the files, including this readme, is licensed under the MIT License (MIT) located [HERE](LICENSE.md)
