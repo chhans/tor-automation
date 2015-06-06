@@ -127,6 +127,7 @@ python patternexperiment.py <closed/open> <number of training instances> <number
 
 ```sh
 python patterexperiment.py closed 4 2
+```
 
 For all combinations of 4 training instances out of 6 (4+2) fingerprints, train a classifier with 4 feature vectors/fingerprints for each site and do predictions on the remaining 2. Stores the result in ./PatternResults/closed/
 
