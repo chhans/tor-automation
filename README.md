@@ -139,4 +139,4 @@ For all combinations of 4 training instances out of 6 (4+2) fingerprints, train 
 
 ## Licensing
 
-All the files, including this readme, is licensed under the MIT License (MIT) located [HERE](LICENSE.md)
+All the files, including this readme, are licensed under the MIT License (MIT) located [HERE](LICENSE.md)
